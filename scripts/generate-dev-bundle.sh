@@ -150,7 +150,7 @@ git checkout r$MONGO_VERSION
 if [ "$MONGO_OS" == "osx" ]; then
     scons -j8 --ssl --cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib all
 elif [ "$MONGO_OS" == "linux" ]; then
-    scons --ssl --extrapath=/usr/local/opt/openssl all
+    scons --ssl --extrapath=/usr/include/openssl all
 fi
 
 # Copy binaries
