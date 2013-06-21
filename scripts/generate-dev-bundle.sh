@@ -134,24 +134,33 @@ rm -rf *
 mv ../$FIBERS_ARCH .
 cd ../..
 
-
-# Download and install mongodb.
+# Checkout and install mongodb.
 # To see the mongo changelog, go to http://www.mongodb.org/downloads,
 # click 'changelog' under the current version, then 'release notes' in
 # the upper right.
 cd "$DIR"
 MONGO_VERSION="2.4.4"
-MONGO_NAME="mongodb-${MONGO_OS}-${ARCH}-${MONGO_VERSION}"
-MONGO_URL="http://fastdl.mongodb.org/${MONGO_OS}/${MONGO_NAME}.tgz"
-curl "$MONGO_URL" | tar -xz
-mv "$MONGO_NAME" mongodb
 
-# don't ship a number of mongo binaries. they are big and unused. these
-# could be deleted from git dev_bundle but not sure which we'll end up
-# needing.
-cd mongodb/bin
-rm bsondump mongodump mongoexport mongofiles mongoimport mongorestore mongos mongosniff mongostat mongotop mongooplog mongoperf
-cd ../..
+mkdir -p mongodb/bin
+git clone git://github.com/mongodb/mongo.git
+cd mongo
+git checkout r$MONGO_VERSION
+
+# Compile
+if [ "$MONGO_OS" == "osx" ]; then
+    scons -j8 --ssl --cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib all
+elif [ "$MONGO_OS" == "linux" ]; then
+    scons --ssl --extrapath=/usr/local/opt/openssl all
+fi
+
+# Copy binaries
+cp mongo ../mongodb/bin/
+cp mongod ../mongodb/bin/
+
+# Copy distribution information
+find ./distsrc -maxdepth 1 -type f -exec cp '{}' ../mongodb \;
+cd ..
+rm -rf mongo
 
 stripBinary bin/node
 stripBinary mongodb/bin/mongo
