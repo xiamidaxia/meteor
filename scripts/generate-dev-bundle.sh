@@ -150,7 +150,8 @@ git checkout r$MONGO_VERSION
 if [ "$MONGO_OS" == "osx" ]; then
     # NOTE: '--prefix' option breaks the compilation
     # NOTE: '--64' option breaks it as well, even it is on by default on x64 mac: https://jira.mongodb.org/browse/SERVER-5575
-    scons install -j4 --ssl --release --cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib mongo mongod
+    alias scons='/usr/local/bin/scons'
+    scons -j4 --ssl --release --cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib mongo mongod
 elif [ "$MONGO_OS" == "linux" ] && [ "$ARCH" == "x86_64" ]; then
     scons --64 -j2 --ssl --release --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin/ --prefix=./ mongo mongod
 elif [ "$MONGO_OS" == "linux" ] && [ "$ARCH" == "i686" ]; then
