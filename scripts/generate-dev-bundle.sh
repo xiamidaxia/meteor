@@ -152,9 +152,9 @@ if [ "$MONGO_OS" == "osx" ]; then
     # NOTE: '--64' option breaks it as well, even it is on by default on x64 mac: https://jira.mongodb.org/browse/SERVER-5575
     scons install -j4 --ssl --release --cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib mongo mongod
 elif [ "$MONGO_OS" == "linux" ] && [ "$ARCH" == "x86_64" ]; then
-    scons install --64 -j2 --ssl --release --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin/ --prefix=./ mongo mongod
+    scons --64 -j2 --ssl --release --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin/ --prefix=./ mongo mongod
 elif [ "$MONGO_OS" == "linux" ] && [ "$ARCH" == "i686" ]; then
-    scons install -j2 --ssl --release --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin/ --prefix=./ mongo mongod
+    scons -j2 --ssl --release --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin/ --prefix=./ mongo mongod
 else
     echo "We don't know how to compile mongo for this platform"
     exit 1
