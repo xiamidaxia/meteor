@@ -148,15 +148,17 @@ git checkout ssl-r$MONGO_VERSION
 
 # Compile
 
-MONGO_FLAGS='--ssl --release --static'
+MONGO_FLAGS='--ssl --release '
 
 if [ "$MONGO_OS" == "osx" ]; then
     # NOTE: '--64' option breaks the compilation, even it is on by default on x64 mac: https://jira.mongodb.org/browse/SERVER-5575
     /usr/local/bin/scons $MONGO_FLAGS -j4 --cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib mongo mongod
-elif [ "$MONGO_OS" == "linux" ] && [ "$ARCH" == "x86_64" ]; then
-    scons $MONGO_FLAGS --64 -j2 --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin/ --prefix=./ mongo mongod
-elif [ "$MONGO_OS" == "linux" ] && [ "$ARCH" == "i686" ]; then
-    scons $MONGO_FLAGS -j2 --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin/ --prefix=./ mongo mongod
+elif [ "$MONGO_OS" == "linux" ]; then
+    MONGO_FLAGS+="-j2 --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin --prefix=./ "
+    if [ "$ARCH" == "x86_64"]; then
+      MONGO_FLAGS+="--64"
+    fi
+    scons $MONGO_FLAGS mongo mongod
 else
     echo "We don't know how to compile mongo for this platform"
     exit 1
