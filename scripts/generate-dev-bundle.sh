@@ -135,6 +135,17 @@ mv ../$FIBERS_ARCH .
 cd ../..
 
 # Checkout and install mongodb.
+
+# openssl is one of the mongo dependancies, minimal dependancy is 1.0.1e
+cd "$DIR"
+OPENSSL="openssl-1.0.1e"
+wget http://www.openssl.org/source/$OPENSSL.tar.gz
+tar xzf $OPENSSL.tar.gz
+cd $OPENSSL
+./config --prefix="$DIR/build/openssl-out" no-shared
+make install
+
+
 # To see the mongo changelog, go to http://www.mongodb.org/downloads,
 # click 'changelog' under the current version, then 'release notes' in
 # the upper right.
@@ -148,14 +159,14 @@ git checkout ssl-r$MONGO_VERSION
 
 # Compile
 
-MONGO_FLAGS='--ssl --release '
+MONGO_FLAGS="--ssl --release --cpppath $DIR/build/openssl-out/include --libpath $DIR/build/openssl-out/lib --openssl $DIR/build/openssl-out/lib "
 
 if [ "$MONGO_OS" == "osx" ]; then
     # NOTE: '--64' option breaks the compilation, even it is on by default on x64 mac: https://jira.mongodb.org/browse/SERVER-5575
-    /usr/local/bin/scons $MONGO_FLAGS -j4 --cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib mongo mongod
+    /usr/local/bin/scons $MONGO_FLAGS -j4 mongo mongod
 elif [ "$MONGO_OS" == "linux" ]; then
-    MONGO_FLAGS+="--static -j2 --no-glibc-check --cpppath /usr/include/ --libpath /usr/bin --prefix=./ "
-    if [ "$ARCH" == "x86_64"]; then
+    MONGO_FLAGS+="--static -j2 --no-glibc-check --prefix=./ "
+    if [ "$ARCH" == "x86_64" ]; then
       MONGO_FLAGS+="--64"
     fi
     scons $MONGO_FLAGS mongo mongod
