@@ -12,6 +12,7 @@ if [ "$UNAME" == "Linux" ] ; then
         echo "Meteor only supports i686 and x86_64 for now."
         exit 1
     fi
+
     MONGO_OS="linux"
 
     stripBinary() {
@@ -136,15 +137,20 @@ cd ../..
 
 # Checkout and install mongodb.
 
-# openssl is one of the mongo dependancies, minimal dependancy is 1.0.1e
-cd "$DIR"
-OPENSSL="openssl-1.0.1e"
-wget http://www.openssl.org/source/$OPENSSL.tar.gz || curl -O http://www.openssl.org/source/$OPENSSL.tar.gz
-tar xzf $OPENSSL.tar.gz
-cd $OPENSSL
-./config --prefix="$DIR/build/openssl-out" no-shared
-make install
+# 'openssl' is one of the mongo dependancies, minimal dependancy is 1.0.1e
+# In case of OS X, it will be available the easiest way through 'brew':
+# brew install openssl
+# in case of linux we compile it
 
+if [ "$UNAME" == "Linux" ]; then
+    cd "$DIR"
+    OPENSSL="openssl-1.0.1e"
+    wget http://www.openssl.org/source/$OPENSSL.tar.gz || curl -O http://www.openssl.org/source/$OPENSSL.tar.gz
+    tar xzf $OPENSSL.tar.gz
+    cd $OPENSSL
+    ./config --prefix="$DIR/build/openssl-out" no-shared
+    make install
+fi
 
 # To see the mongo changelog, go to http://www.mongodb.org/downloads,
 # click 'changelog' under the current version, then 'release notes' in
@@ -159,14 +165,16 @@ git checkout ssl-r$MONGO_VERSION
 
 # Compile
 
-MONGO_FLAGS="--ssl --release --cpppath $DIR/build/openssl-out/include --libpath $DIR/build/openssl-out/lib "
+MONGO_FLAGS="--ssl --release "
 
 if [ "$MONGO_OS" == "osx" ]; then
-    MONGO_FLAGS+="-j4 --openssl $DIR/build/openssl-out/lib "
     # NOTE: '--64' option breaks the compilation, even it is on by default on x64 mac: https://jira.mongodb.org/browse/SERVER-5575
+    MONGO_FLAGS+="-j4 "
+    MONGO_FLAGS+="--cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib --openssl /usr/local/Cellar/openssl/1.0.1e/lib "
     /usr/local/bin/scons $MONGO_FLAGS mongo mongod
 elif [ "$MONGO_OS" == "linux" ]; then
     MONGO_FLAGS+="--static -j2 --no-glibc-check --prefix=./ "
+    MONGO_FLAGS+="--cpppath $DIR/build/openssl-out/include --libpath $DIR/build/openssl-out/lib "
     if [ "$ARCH" == "x86_64" ]; then
       MONGO_FLAGS+="--64"
     fi
