@@ -138,22 +138,24 @@ cd ../..
 # Checkout and install mongodb.
 
 # 'openssl' is one of the mongo dependancies, minimal dependancy is 1.0.1e
-# In case of OS X, it will be available the easiest way through 'brew':
-# brew install openssl
-# in case of linux we compile it
+
+cd "$DIR"
+OPENSSL="openssl-1.0.1e"
+OPENSSL_URL="http://www.openssl.org/source/$OPENSSL.tar.gz"
+wget $OPENSSL_URL || curl -O $OPENSSL_URL
+tar xzf $OPENSSL.tar.gz
+rm $OPENSSL.tar.gz
+cd $OPENSSL
 
 if [ "$UNAME" == "Linux" ]; then
-    cd "$DIR"
-    OPENSSL="openssl-1.0.1e"
-    wget http://www.openssl.org/source/$OPENSSL.tar.gz || curl -O http://www.openssl.org/source/$OPENSSL.tar.gz
-    tar xzf $OPENSSL.tar.gz
-    rm $OPENSSL.tar.gz
-    cd $OPENSSL
     ./config --prefix="$DIR/build/openssl-out" no-shared
-    make install
-    cd ..
-    rm -rf $OPENSSL
+else
+    ./Configure no-shared zlib-dynamic --prefix="$DIR/build/openssl-out" darwin64-x86_64-cc enable-ec_nistp_64_gcc_128
 fi
+make install
+
+cd ..
+rm -rf $OPENSSL
 
 # To see the mongo changelog, go to http://www.mongodb.org/downloads,
 # click 'changelog' under the current version, then 'release notes' in
@@ -169,15 +171,15 @@ git checkout ssl-r$MONGO_VERSION
 # Compile
 
 MONGO_FLAGS="--ssl --release "
+MONGO_FLAGS+="--cpppath $DIR/build/openssl-out/include --libpath $DIR/build/openssl-out/lib "
 
 if [ "$MONGO_OS" == "osx" ]; then
     # NOTE: '--64' option breaks the compilation, even it is on by default on x64 mac: https://jira.mongodb.org/browse/SERVER-5575
     MONGO_FLAGS+="-j4 "
-    MONGO_FLAGS+="--cpppath /usr/local/Cellar/openssl/1.0.1e/include --libpath /usr/local/Cellar/openssl/1.0.1e/lib --openssl /usr/local/Cellar/openssl/1.0.1e/lib "
+    MONGO_FLAGS+="--openssl $DIR/build/openssl-out/lib "
     /usr/local/bin/scons $MONGO_FLAGS mongo mongod
 elif [ "$MONGO_OS" == "linux" ]; then
     MONGO_FLAGS+="--static -j2 --no-glibc-check --prefix=./ "
-    MONGO_FLAGS+="--cpppath $DIR/build/openssl-out/include --libpath $DIR/build/openssl-out/lib "
     if [ "$ARCH" == "x86_64" ]; then
       MONGO_FLAGS+="--64"
     fi
