@@ -147,9 +147,12 @@ if [ "$UNAME" == "Linux" ]; then
     OPENSSL="openssl-1.0.1e"
     wget http://www.openssl.org/source/$OPENSSL.tar.gz || curl -O http://www.openssl.org/source/$OPENSSL.tar.gz
     tar xzf $OPENSSL.tar.gz
+    rm $OPENSSL.tar.gz
     cd $OPENSSL
     ./config --prefix="$DIR/build/openssl-out" no-shared
     make install
+    cd ..
+    rm -rf $OPENSSL
 fi
 
 # To see the mongo changelog, go to http://www.mongodb.org/downloads,
