@@ -135,18 +135,17 @@ rm -rf *
 mv ../$FIBERS_ARCH .
 cd ../..
 
-# Checkout and install mongodb.
+# Checkout and build mongodb.
+# We want to build a binary that includes SSL support but does not depend on a
+# particular version of openssl on the host system.
 
-# 'openssl' is one of the mongo dependancies, minimal dependancy is 1.0.1e
-
-cd "$DIR"
+cd "$DIR/build"
 OPENSSL="openssl-1.0.1e"
 OPENSSL_URL="http://www.openssl.org/source/$OPENSSL.tar.gz"
 wget $OPENSSL_URL || curl -O $OPENSSL_URL
 tar xzf $OPENSSL.tar.gz
-rm $OPENSSL.tar.gz
-cd $OPENSSL
 
+cd $OPENSSL
 if [ "$UNAME" == "Linux" ]; then
     ./config --prefix="$DIR/build/openssl-out" no-shared
 else
@@ -154,16 +153,12 @@ else
 fi
 make install
 
-cd ..
-rm -rf $OPENSSL
-
 # To see the mongo changelog, go to http://www.mongodb.org/downloads,
 # click 'changelog' under the current version, then 'release notes' in
 # the upper right.
-cd "$DIR"
+cd "$DIR/build"
 MONGO_VERSION="2.4.4"
 
-mkdir -p mongodb/bin
 git clone git://github.com/meteor/mongo.git
 cd mongo
 git checkout ssl-r$MONGO_VERSION
@@ -190,14 +185,14 @@ else
 fi
 
 # Copy binaries
-cp mongo ../mongodb/bin/
-cp mongod ../mongodb/bin/
+mkdir -p "$DIR/mongodb/bin"
+cp mongo "$DIR/mongodb/bin/"
+cp mongod "$DIR/mongodb/bin/"
 
-# Copy distribution information
+# Copy mongodb distribution information
 find ./distsrc -maxdepth 1 -type f -exec cp '{}' ../mongodb \;
-cd ..
-rm -rf mongo
 
+cd "$DIR"
 stripBinary bin/node
 stripBinary mongodb/bin/mongo
 stripBinary mongodb/bin/mongod
