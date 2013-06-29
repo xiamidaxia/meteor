@@ -1,4 +1,5 @@
 #!/bin/bash
+# optional parameter: build folder
 
 set -e
 set -u
@@ -30,7 +31,12 @@ PLATFORM="${UNAME}_${ARCH}"
 cd `dirname $0`/..
 TARGET_DIR=`pwd`
 
-DIR=`mktemp -d -t generate-dev-bundle-XXXXXXXX`
+if [ $# -eq 0 ]; then
+    DIR=`mktemp -d -t generate-dev-bundle-XXXXXXXX`
+else
+    DIR="$1/`mktemp generate-mongo-ssl-XXXXXXXX`"
+    mkdir -p $DIR
+fi
 #trap 'rm -rf "$DIR" >/dev/null 2>&1' 0
 
 echo BUILDING IN "$DIR"
