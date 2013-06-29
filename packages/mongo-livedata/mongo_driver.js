@@ -176,11 +176,10 @@ _Mongo.prototype._maybeBeginWrite = function () {
 
 //////////// Public API //////////
 
-// The write methods block until the database has confirmed the write
-// (it may not be replicated or stable on disk, but one server has
-// confirmed it.) (In the future we might have an option to turn this
-// off, ie, to enqueue the request on the wire and return
-// immediately.)  They return nothing on success, and raise an
+// The write methods block until the database has confirmed the write (it may
+// not be replicated or stable on disk, but one server has confirmed it) if no
+// callback is provided. If a callback is provided, then they call the callback
+// when the write is confirmed. They return nothing on success, and raise an
 // exception on failure.
 //
 // After making a write (with insert, update, remove), observers are
