@@ -202,17 +202,22 @@ var writeCallback = function (write, refresh, callback) {
     write.committed();
     if (callback)
       callback(err, result);
+    else
+      throw err;
   }, function (err) {
     Meteor._debug("Error in Mongo write:", err.stack);
   });
 };
 
-_Mongo.prototype.insert = function (collection_name, document, callback) {
+_Mongo.prototype._insert = function (collection_name, document, callback) {
   var self = this;
   if (collection_name === "___meteor_failure_test_collection") {
     var e = new Error("Failure test");
     e.expected = true;
-    throw e;
+    if (callback)
+      return callback(e);
+    else
+      throw e;
   }
 
   var write = self._maybeBeginWrite();
@@ -226,6 +231,7 @@ _Mongo.prototype.insert = function (collection_name, document, callback) {
                       {safe: true}, callback);
   } catch (e) {
     write.committed();
+    throw e;
   }
 };
 
@@ -248,13 +254,16 @@ _Mongo.prototype._refresh = function (collectionName, selector) {
   }
 };
 
-_Mongo.prototype.remove = function (collection_name, selector, callback) {
+_Mongo.prototype._remove = function (collection_name, selector, callback) {
   var self = this;
 
   if (collection_name === "___meteor_failure_test_collection") {
     var e = new Error("Failure test");
     e.expected = true;
-    throw e;
+    if (callback)
+      return callback(e);
+    else
+      throw e;
   }
 
   var write = self._maybeBeginWrite();
@@ -265,27 +274,30 @@ _Mongo.prototype.remove = function (collection_name, selector, callback) {
 
   try {
     var collection = self._getCollection(collection_name);
-    var future = new Future;
     collection.remove(replaceTypes(selector, replaceMeteorAtomWithMongo),
                       {safe: true}, callback);
   } catch (e) {
     write.committed();
+    throw e;
   }
 };
 
-_Mongo.prototype.update = function (collection_name, selector, mod,
+_Mongo.prototype._update = function (collection_name, selector, mod,
                                     options, callback) {
   var self = this;
-
-  if (collection_name === "___meteor_failure_test_collection") {
-    var e = new Error("Failure test");
-    e.expected = true;
-    throw e;
-  }
 
   if (! callback && options instanceof Function) {
     callback = options;
     options = null;
+  }
+
+  if (collection_name === "___meteor_failure_test_collection") {
+    var e = new Error("Failure test");
+    e.expected = true;
+    if (callback)
+      return callback(e);
+    else
+      throw e;
   }
 
   // explicit safety check. null and undefined can crash the mongo
@@ -314,8 +326,16 @@ _Mongo.prototype.update = function (collection_name, selector, mod,
                       mongoOpts, callback);
   } catch (e) {
     write.committed();
+    throw e;
   }
 };
+
+_.each(["insert", "update", "remove"], function (method) {
+  _Mongo.prototype[method] = function (/* arguments */) {
+    var self = this;
+    return Meteor._wrapAsync(self["_" + method]).apply(self, arguments);
+  };
+});
 
 _Mongo.prototype.find = function (collectionName, selector, options) {
   var self = this;
