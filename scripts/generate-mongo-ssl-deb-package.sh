@@ -76,7 +76,7 @@ git checkout ssl-r$MONGO_VERSION
 MONGO_FLAGS="--ssl --release "
 MONGO_FLAGS+="--cpppath $DIR/build/openssl-out/include --libpath $DIR/build/openssl-out/lib "
 
-MONGO_FLAGS+="--static -j2 --no-glibc-check --prefix=$DIR "
+MONGO_FLAGS+="-j2 --no-glibc-check --prefix=$DIR "
 if [ "$ARCH" == "x86_64" ]; then
     MONGO_FLAGS+="--64"
 fi
