@@ -746,10 +746,11 @@ Fiber(function () {
       var opt = require('optimist')
             .boolean('url')
             .boolean('U')
+            .boolean('ssl')
             .alias('url', 'U')
             .describe('url', 'return a Mongo database URL')
             .usage(
-              "Usage: meteor mongo [--url] [site]\n" +
+              "Usage: meteor mongo [--url] [site] [--ssl]\n" +
                 "\n" +
                 "Opens a Mongo shell to view or manipulate collections.\n" +
                 "\n" +
@@ -763,7 +764,10 @@ Fiber(function () {
                 "\n" +
                 "Instead of opening a shell, specifying --url (-U) will return a URL\n" +
                 "suitable for an external program to connect to the database.  For remote\n" +
-                "databases on deployed applications, the URL is valid for one minute.\n"
+                "databases on deployed applications, the URL is valid for one minute.\n" +
+                "\n" +
+                "Specifying --ssl will force ssl flags on mongo shell. Use it if your\n" +
+                "remote mongo server is running with ssl options on main ports.\n"
             );
 
       if (argv.help) {
@@ -812,7 +816,7 @@ Fiber(function () {
         console.log(mongoUrl);
       } else {
         process.stdin.pause();
-        deploy.run_mongo_shell(mongoUrl);
+        deploy.run_mongo_shell(mongoUrl, new_argv.ssl);
       }
     }
   });
