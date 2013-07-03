@@ -80,20 +80,36 @@ MONGO_FLAGS+="-j2 --no-glibc-check --prefix=$DIR "
 if [ "$ARCH" == "x86_64" ]; then
     MONGO_FLAGS+="--64"
 fi
-scons $MONGO_FLAGS all
+scons $MONGO_FLAGS all || true # It fails on 'all' target but produces the binaries we need
 
-# Copy mongodb distribution information
-find ./distsrc -maxdepth 1 -type f -exec cp '{}' ../mongodb \;
+OUT_DIR=mongodb-linux-$ARCH-$MONGOVERSION
+mkdir -p $OUTDIR/bin
+mv bsondump\
+   mongo\
+   mongobridge\
+   mongod\
+   mongodump\
+   mongoexport\
+   mongofiles\
+   mongoimport\
+   mongooplog\
+   mongoperf\
+   mongorestore\
+   mongos\
+   mongostat\
+   mongotop $OUTDIR/bin
 
-cd "$DIR"
-stripBinary *
+# stripBinary $OUTDIR/bin/* # uncomment this if you want to strip all output binaries
 
 echo BUNDLING
 
-cd "$DIR"
-echo "${BUNDLE_VERSION}" > .bundle_version.txt
-#rm -rf build
+tar -czf $OUTDIR.tar.gz $OUTDIR
+mv $OUTDIR.tar.gz $DIR
 
-#tar czf "${TARGET_DIR}/dev_bundle_${PLATFORM}_${BUNDLE_VERSION}.tar.gz" .
+cd "$DIR"
+
+cd "$DIR"
+rm -rf build
 
 echo DONE
+
