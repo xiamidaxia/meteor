@@ -196,6 +196,7 @@ exports.logs = function (options) {
     galaxy.close();
   }
 
+  var lastLog = null;
   var logReader = getMeteor(options.context).connect(logReaderURL);
   var Log = unipackage.load({
     library: options.context.library,
@@ -209,6 +210,7 @@ exports.logs = function (options) {
       if (msg.msg !== 'changed')
         return;
       var obj = msg.fields.obj;
+      lastLog = obj;
       obj = Log.parse(obj);
       obj && console.log(Log.format(obj, {color: true}));
     }
@@ -217,6 +219,12 @@ exports.logs = function (options) {
   if (!ok)
     throw new Error("Can't listen to messages on the logs collection");
 
+  // In case of reconnect recover the state so user sees only new logs
+  logReader.onReconnect = function () {
+    prettySub(logReader, "logsForApp", [options.app,
+                                        {streaming: options.streaming,
+                                         startingLog: lastLog}]);
+  };
   prettySub(logReader, "logsForApp", [options.app,
                                       {streaming: options.streaming}], {
     "no-such-app": "No such app: " + options.app
