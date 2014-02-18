@@ -2,25 +2,25 @@ Template.api.isClient = {
   id: "meteor_isclient",
   name: "Meteor.isClient",
   locus: "Anywhere",
-  descr: ["Boolean variable.  True if running in client environment."]
+  descr: ["布尔值。运行在客户端时候为真。"]
 };
 
 Template.api.isServer = {
   id: "meteor_isserver",
   name: "Meteor.isServer",
   locus: "Anywhere",
-  descr: ["Boolean variable.  True if running in server environment."]
+  descr: ["布尔值。运行在服务端时候为真。"]
 };
 
 Template.api.startup = {
   id: "meteor_startup",
   name: "Meteor.startup(func)",
   locus: "Anywhere",
-  descr: ["Run code when a client or a server starts."],
+  descr: ["当客户端或服务端开始时运行。"],
   args: [
     {name: "func",
      type: "Function",
-     descr: "A function to run on startup."}
+     descr: "开始时候要运行的函数。"}
   ]
 };
 
@@ -28,28 +28,26 @@ Template.api.absoluteUrl = {
   id: "meteor_absoluteurl",
   name: "Meteor.absoluteUrl([path], [options])",
   locus: "Anywhere",
-  descr: ["Generate an absolute URL pointing to the application. The server "
-          + "reads from the `ROOT_URL` environment variable to determine "
-          + "where it is running. This is taken care of automatically for "
-          + "apps deployed with `meteor deploy`, but must be provided when "
-          + "using `meteor bundle`."],
+  descr: ["生成一个指向应用程序的绝对URL。服务器从 “ROOT_URL” 中读取环境变量以确定在哪里运行。"
+          + "这个会自动照顾使用 “meteor deploy”发布的应用，但是前提是必须在使用“meteor "
+          + "bundle” 后提供。"],
   args: [
     {name: "path",
      type: "String",
-     descr: 'A path to append to the root URL. Do not include a leading "`/`".'
+     descr: '要增加到root URL的路径. 路径中不能包含 "`/`".'
     }
   ],
   options: [
     {name: "secure",
      type: "Boolean",
-     descr: "Create an HTTPS URL."
+     descr: "是否创建HTTPS URL."
     },
     {name: "replaceLocalhost",
      type: "Boolean",
-     descr: "Replace localhost with 127.0.0.1. Useful for services that don't recognize localhost as a domain name."},
+     descr: "是否替换 localhost(127.0.0.1). 特别适用于不承认localhost当域名的服务。"},
     {name: "rootUrl",
      type: "String",
-     descr: "Override the default ROOT_URL from the server environment. For example: \"`http://foo.example.com`\""
+     descr: "覆盖服务端环境默认的 ROOT_URL 。 例如: \"`http://foo.example.com`\""
     }
   ]
 };
@@ -58,24 +56,23 @@ Template.api.settings = {
   id: "meteor_settings",
   name: "Meteor.settings",
   locus: "Anywhere",
-  descr: ["`Meteor.settings` contains deployment-specific configuration options. " +
-          "You can initialize settings by passing the `--settings` option (which takes a file containing JSON data) to " +
-          "`meteor run` or `meteor deploy`, " +
-          "or by setting your server process's `METEOR_SETTINGS` environment variable to a JSON string. " +
-          "If you don't provide any settings, `Meteor.settings` will be an empty object.  If the settings object contains a key named `public`, then " +
-          "`Meteor.settings.public` will be available on the client as well as the server.  All other properties of `Meteor.settings` are only defined on the server."]
+  descr: ["`Meteor.settings` 包含部署特定配置的信息. " +
+          "你可以通过 `--settings` 操作 (需要包含json数据的文件) 来做 " +
+          "`meteor run` 或 `meteor deploy`初始化，" +
+          "或者通过配置服务器端的 `METEOR_SETTINGS` 环境变量为JSON字符串。" +
+          "如果你没有提供任何的设置, `Meteor.settings` 将为空的对象. 如果设置对象包含key值 `public`, 那么 " +
+          " `Meteor.settings.public` 将在客户端和服务端同时可用. 但其他`Meteor.settings`属性都只能在服务器端定义."]
 };
 
 Template.api.release = {
   id: "meteor_release",
   name: "Meteor.release",
   locus: "Anywhere",
-  descr: ["`Meteor.release` is a string containing the name of the " +
-          "[release](#meteorupdate) with which the project was built (for " +
-          "example, `\"" +
-          Meteor.release +
-          "\"`). It is `undefined` if the project was built using a git " +
-          "checkout of Meteor."]
+  descr: ["`Meteor.release` 是一个字符串包含project被创建的 " +
+          "[release](#meteorupdate)版本。(例如" +
+          "\"" +
+          "0.7.0.1" + //Meteor.release +
+          "\"`). 如果project使用git从Meteor中checkout，则为 `undefined`。"]
 };
 
 Template.api.ejsonParse = {
@@ -205,14 +202,15 @@ Template.api.publish = {
   id: "meteor_publish",
   name: "Meteor.publish(name, func)",
   locus: "Server",
-  descr: ["Publish a record set."],
+  descr: ["发布一套档案."],
   args: [
     {name: "name",
      type: "String",
-     descr: "Name of the attribute set.  If `null`, the set has no name, and the record set is automatically sent to all connected clients."},
+     descr: "档案的名字. 如果为`null`则档案无名字, 然后档案自动发送到所有已连接的客户端."},
     {name: "func",
      type: "Function",
-     descr: "Function called on the server each time a client subscribes.  Inside the function, `this` is the publish handler object, described below.  If the client passed arguments to `subscribe`, the function is called with the same arguments."}
+     descr: "当每次一个客户端订阅时候函数被调用. 函数里边, `this` 是publish对象的引用, 将在稍后说明.  " +
+         "如果客户端通过`subscribe`中指定参数, 则函数调用时候将采用同样的参数."}
   ]
 };
 
