@@ -218,19 +218,19 @@ Template.api.subscription_added = {
   id: "publish_added",
   name: "<i>this</i>.added(collection, id, fields)",
   locus: "Server",
-  descr: ["Call inside the publish function.  Informs the subscriber that a document has been added to the record set."],
+  descr: ["pubulish函数内部访问. 当文档已经添加到档案中则通知订阅者"],
   args: [
     {name: "collection",
      type: "String",
-     descr: "The name of the collection that contains the new document."
+     descr: "包含新文档的集合."
     },
     {name: "id",
      type: "String",
-     descr: "The new document's ID."
+     descr: "新文档的ID."
     },
     {name: "fields",
      type: "Object",
-     descr: "The fields in the new document.  If `_id` is present it is ignored."
+     descr: "新文档的fields. 如果`_id`存在时候它被忽略."
     }
   ]
 };
@@ -239,19 +239,20 @@ Template.api.subscription_changed = {
   id: "publish_changed",
   name: "<i>this</i>.changed(collection, id, fields)",
   locus: "Server",
-  descr: ["Call inside the publish function.  Informs the subscriber that a document in the record set has been modified."],
+  descr: ["publish函数内部调用. 当文档已经修改到档案中则通知订阅者"],
   args: [
     {name: "collection",
      type: "String",
-     descr: "The name of the collection that contains the changed document."
+     descr: "包含已修改文档的集合."
     },
     {name: "id",
      type: "String",
-     descr: "The changed document's ID."
+     descr: "已修改文档的ID."
     },
     {name: "fields",
      type: "Object",
-     descr: "The fields in the document that have changed, together with their new values.  If a field is not present in `fields` it was left unchanged; if it is present in `fields` and has a value of `undefined` it was removed from the document.  If `_id` is present it is ignored."
+     descr: "已经更改的文档的fields,连同它新的值。如果fields不存在则将被保持不变" +
+         "如果有值为undefined它将从文档中移除。如果_id存在则忽略。"
     }
   ]
 };
@@ -260,15 +261,15 @@ Template.api.subscription_removed = {
   id: "publish_removed",
   name: "<i>this</i>.removed(collection, id)",
   locus: "Server",
-  descr: ["Call inside the publish function.  Informs the subscriber that a document has been removed from the record set."],
+  descr: ["publish函数内部调用. 当文档已经在档案中删除则通知订阅者"],
   args: [
     {name: "collection",
      type: "String",
-     descr: "The name of the collection that the document has been removed from."
+     descr: "被删除文档所属集合的名字"
     },
     {name: "id",
      type: "String",
-     descr: "The ID of the document that has been removed."
+     descr: "被删除文档的id"
     }
   ]
 };
@@ -277,7 +278,11 @@ Template.api.subscription_ready = {
   id: "publish_ready",
   name: "<i>this</i>.ready()",
   locus: "Server",
-  descr: ["Call inside the publish function.  Informs the subscriber that an initial, complete snapshot of the record set has been sent.  This will trigger a call on the client to the `onReady` callback passed to  [`Meteor.subscribe`](#meteor_subscribe), if any."]
+  descr: ["publish函数内部调用.  " +
+      "通知订阅者一个初始化完成的档案的快照已经发送。" +
+      "这将触发客户端一个函数`onready`" +
+      ",通过[`Meteor.subscribe`](#meteor_subscribe)"
+      ]
 };
 
 
@@ -285,25 +290,29 @@ Template.api.subscription_error = {
   id: "publish_error",
   name: "<i>this</i>.error(error)",
   locus: "Server",
-  descr: ["Call inside the publish function.  Stops this client's subscription, triggering a call on the client to the `onError` callback passed to [`Meteor.subscribe`](#meteor_subscribe), if any. If `error` is not a [`Meteor.Error`](#meteor_error), it will be [sanitized](#meteor_error)."]
+  descr: ["publish函数内部调用。" +
+      "[`Meteor.subscribe`](#meteor_subscribe)触发时" +
+      "停止客户端端订阅,如果错误不是[`Meteor.Error`](#meteor_error)," +
+      "它将被过滤"]
 };
 
 Template.api.subscription_stop = {
   id: "publish_stop",
   name: "<i>this</i>.stop()",
   locus: "Server",
-  descr: ["Call inside the publish function.  Stops this client's subscription; the `onError` callback is *not* invoked on the client."]
+  descr: ["publish函数内部调用。停止客户端订阅，" +
+      "`onError`回调不会在客户端上调用."]
 };
 
 Template.api.subscription_onStop = {
   id: "publish_onstop",
   name: "<i>this</i>.onStop(func)",
   locus: "Server",
-  descr: ["Call inside the publish function.  Registers a callback function to run when the subscription is stopped."],
+  descr: ["publish函数内部调用，当一个订阅停止时候运行"],
   args: [
     {name: "func",
      type: "Function",
-     descr: "The callback function"
+     descr: "回调"
     }
   ]
 };
@@ -312,7 +321,7 @@ Template.api.subscription_userId = {
   id: "publish_userId",
   name: "<i>this</i>.userId",
   locus: "Server",
-  descr: ["Access inside the publish function. The id of the logged-in user, or `null` if no user is logged in."]
+  descr: ["发布函数内部访问. 已登陆用户的id, 或者没有用户登陆时候为`null`."]
 };
 
 
@@ -320,7 +329,8 @@ Template.api.subscription_connection = {
   id: "publish_connection",
   name: "<i>this</i>.connection",
   locus: "Server",
-  descr: ["Access inside the publish function. The incoming [connection](#meteor_onconnection) for this subscription."]
+  descr: ["发布函数内部访问。" +
+      "该订阅的[connection](#meteor_onconnection)"]
 };
 
 
@@ -328,17 +338,19 @@ Template.api.subscribe = {
   id: "meteor_subscribe",
   name: "Meteor.subscribe(name [, arg1, arg2, ... ] [, callbacks])",
   locus: "Client",
-  descr: ["Subscribe to a record set.  Returns a handle that provides `stop()` and `ready()` methods."],
+  descr: ["订阅一条记录.  " +
+      "返回一个提供 `stop()` 和 `ready()` 方法的句柄"],
   args: [
     {name: "name",
      type: "String",
-     descr: "Name of the subscription.  Matches name of server's publish() call."},
+     descr: "订阅的名字，和服务端publish()中的名字匹配"},
     {name: "arg1, arg2, ...",
      type: "Any",
-     descr: "Optional arguments passed to publisher function on server."},
+     descr: "可选参数由服务端publish()推送"},
     {name: "callbacks",
-     type: "Function or Object",
-     descr: "Optional. May include `onError` and `onReady` callbacks. If a function is passed instead of an object, it is interpreted as an `onReady` callback."}
+     type: "函数或者对象",
+     descr: "可选的. 可能包含`onError` and `onReady`回调. " +
+         "如果是对象, 则它被解释为`onReady的回调`"}
   ]
 };
 
@@ -346,11 +358,11 @@ Template.api.methods = {
   id: "meteor_methods",
   name: "Meteor.methods(methods)",
   locus: "Anywhere",
-  descr: ["Defines functions that can be invoked over the network by clients."],
+  descr: ["定义一些能被远程客户端调用的函数。"],
   args: [
     {name: "methods",
      type: "Object",
-     descr: "Dictionary whose keys are method names and values are functions."}
+     descr: "键为方法名，值为函数的字典对象"}
   ]
 };
 
@@ -358,18 +370,18 @@ Template.api.method_invocation_userId = {
   id: "method_userId",
   name: "<i>this</i>.userId",
   locus: "Anywhere",
-  descr: ["The id of the user that made this method call, or `null` if no user was logged in."]
+  descr: ["调用改方法的用户id，如果用户未登陆则为`null`"]
 };
 
 Template.api.method_invocation_setUserId = {
   id: "method_setUserId",
   name: "<i>this</i>.setUserId(userId)",
   locus: "Server",
-  descr: ["Set the logged in user."],
+  descr: ["设置登陆用户。"],
   args: [
     {name: "userId",
      type: "String or null",
-     descr: "The value that should be returned by `userId` on this connection."}
+     descr: "在连接的时候需要返回的`userId`的值"}
   ]
 };
 
@@ -377,38 +389,40 @@ Template.api.method_invocation_unblock = {
   id: "method_unblock",
   name: "<i>this</i>.unblock()",
   locus: "Server",
-  descr: ["Call inside a method invocation.  Allow subsequent method from this client to begin running in a new fiber."]
+  descr: ["内部方法调用. 允许后续方法调用在客户端的新连接上。"]
 };
 
 Template.api.method_invocation_isSimulation = {
   id: "method_issimulation",
   name: "<i>this</i>.isSimulation",
   locus: "Anywhere",
-  descr: ["Access inside a method invocation.  Boolean value, true if this invocation is a stub."]
+  descr: ["内部方法调用. 布尔值, 为真如果调用是一个存根."]
 };
 
 Template.api.method_invocation_connection = {
   id: "method_connection",
   name: "<i>this</i>.connection",
   locus: "Server",
-  descr: ["Access inside a method invocation. The [connection](#meteor_onconnection) this method was received on. `null` if the method is not associated with a connection, eg. a server initiated method call."]
+  descr: ["内部方法调用. 该方法收到的" +
+      " [连接](#meteor_onconnection) 。" +
+      "如果该方法未建立连接则为`null`, 例如调用服务端的一个初始化方法"]
 };
 
 Template.api.error = {
   id: "meteor_error",
   name: "new Meteor.Error(error, reason, details)",
   locus: "Anywhere",
-  descr: ["This class represents a symbolic error thrown by a method."],
+  descr: ["该类代表方法抛出一个象征性的错误"],
   args: [
     {name: "error",
      type: "Number",
-     descr: "A numeric error code, likely similar to an HTTP code (eg, 404, 500)."},
+     descr: "一个错误号，类似HTTP码(如, 404, 500)"},
     {name: "reason",
      type: "String",
-     descr: "Optional.  A short human-readable summary of the error, like 'Not Found'."},
+     descr: "可选的. 一个简短的可读的错误描述，如'Not Found.'"} +
     {name: "details",
      type: "String",
-     descr: "Optional.  Additional information about the error, like a textual stack trace."}
+     descr: "可选的. 错误的附加信息，例如一个堆栈跟踪的文本"}
   ]
 };
 
@@ -416,17 +430,18 @@ Template.api.meteor_call = {
   id: "meteor_call",
   name: "Meteor.call(name, param1, param2, ... [, asyncCallback])",
   locus: "Anywhere",
-  descr: ["Invokes a method passing any number of arguments."],
+  descr: ["调用一个方法通过任意数量的参数。"],
   args: [
     {name: "name",
      type: "String",
-     descr: "Name of method to invoke"},
+     descr: "要被调用方法的名字"},
     {name: "param1, param2, ...",
      type: "EJSON",
-     descr: "Optional method arguments"},
+     descr: "可选的方法参数"},
     {name: "asyncCallback",
      type: "Function",
-     descr: "Optional callback, which is called asynchronously with the error or result after the method is complete. If not provided, the method runs synchronously if possible (see below)."}
+     descr: "可选回调, 用于异步调用，方法完成返回结果或错误。" +
+         "如果没有设置，可能的情况下该方法会同步调用(见下文)."}
   ]
 };
 
@@ -434,25 +449,27 @@ Template.api.meteor_apply = {
   id: "meteor_apply",
   name: "Meteor.apply(name, params [, options] [, asyncCallback])",
   locus: "Anywhere",
-  descr: ["Invoke a method passing an array of arguments."],
+  descr: ["通过一个参数数组调用一个方法"],
   args: [
     {name: "name",
      type: "String",
-     descr: "Name of method to invoke"},
+     descr: "被调用方法的名字"},
     {name: "params",
      type: "Array",
      descr: "Method arguments"},
     {name: "asyncCallback",
      type: "Function",
-     descr: "Optional callback; same semantics as in [`Meteor.call`](#meteor_call)."}
+     descr: "可选的；语法类似[`Meteor.call`](#meteor_call)."}
   ],
   options: [
     {name: "wait",
      type: "Boolean",
-     descr: "(Client only) If true, don't send this method until all previous method calls have completed, and don't send any subsequent method calls until this one is completed."},
+     descr: "(只支持客户端) 如果为真，别发送该方法，直到所有之前的方法已经完成，" +
+         "且别发送后续的方法的调用直到该方法已经完成。"},
     {name: "onResultReceived",
      type: "Function",
-     descr: "(Client only) This callback is invoked with the error or result of the method (just like `asyncCallback`) as soon as the error or result is available. The local cache may not yet reflect the writes performed by the method."}
+     descr: "(只支持客户端) 该方法用于被方法的错误或结果返回(类似`异步回调`)调用，在错误或结果可用的时候. " +
+         "本地的缓存可能尚未反应该方法的写入操作。"}
   ]
 };
 
@@ -460,7 +477,7 @@ Template.api.status = {
   id: "meteor_status",
   name: "Meteor.status()",
   locus: "Client",
-  descr: ["Get the current connection status. A reactive data source."]
+  descr: ["获取当前客户端的连接状态，一个响应式数据源."]
 };
 
 Template.api.reconnect = {
@@ -468,8 +485,8 @@ Template.api.reconnect = {
   name: "Meteor.reconnect()",
   locus: "Client",
   descr: [
-    "Force an immediate reconnection attempt if the client is not connected to the server.",
-    "This method does nothing if the client is already connected."]
+    "强制立即尝试重连如果一个客户端为连接服务器." +
+        "如果客户端已经连接这个方法不执行任何的."]
 };
 
 Template.api.disconnect = {
@@ -477,18 +494,18 @@ Template.api.disconnect = {
   name: "Meteor.disconnect()",
   locus: "Client",
   descr: [
-    "Disconnect the client from the server."]
+    "断开客户端连接."]
 };
 
 Template.api.connect = {
   id: "ddp_connect",
   name: "DDP.connect(url)",
   locus: "Anywhere",
-  descr: ["Connect to the server of a different Meteor application to subscribe to its document sets and invoke its remote methods."],
+  descr: ["连接到服务端上一个不同的Meteor应用，并订阅它的文档，调用其远程方法。"],
   args: [
     {name: "url",
      type: "String",
-     descr: "The URL of another Meteor application."}
+     descr: "其他Meteor应用的URL."}
   ]
 };
 
@@ -510,27 +527,32 @@ Template.api.meteor_collection = {
   id: "meteor_collection",
   name: "new Meteor.Collection(name, [options])",
   locus: "Anywhere",
-  descr: ["Constructor for a Collection"],
+  descr: ["构造一个集合"],
   args: [
     {name: "name",
      type: "String",
-     descr: "The name of the collection.  If null, creates an unmanaged (unsynchronized) local collection."}
+     descr: "集合的名称。如果为null，将创建一个未托管(非同步)的本地集合"}
   ],
   options: [
     {name: "connection",
      type: "Object",
-     descr: "The server connection that will manage this collection. Uses the default connection if not specified.  Pass the return value of calling [`DDP.connect`](#ddp_connect) to specify a different server. Pass `null` to specify no connection. Unmanaged (`name` is null) collections cannot specify a connection."
+     descr: "服务端集合可以管理该集合。如果没指明将使用默认连接。" +
+         "调用[`DDP.connect`](#ddp_connect) 可指定一个不同的服务器比国内传递返回值。" +
+         "没指定连接返回null。" +
+         "未托管的集合 (`name` 是 null) 不能指定一个连接."
     },
     {name: "idGeneration",
      type: "String",
-     descr: "The method of generating the `_id` fields of new documents in this collection.  Possible values:\n\n" +
-     " - **`'STRING'`**: random strings\n" +
-     " - **`'MONGO'`**:  random [`Meteor.Collection.ObjectID`](#collection_object_id) values\n\n" +
-     "The default id generation technique is `'STRING'`."
+     descr: "该方法生成一个新文档的`_id`字段在这个集合。可能的值为:\n\n" +
+     " - **`'STRING'`**: 随机字符串\n" +
+     " - **`'MONGO'`**:  随机 [`Meteor.Collection.ObjectID`](#collection_object_id) 值\n\n" +
+     "默认是 `'STRING'`."
     },
     {name: "transform",
      type: "Function",
-     descr: "An optional transformation function. Documents will be passed through this function before being returned from `fetch` or `findOne`, and before being passed to callbacks of `observe`, `allow`, and `deny`."
+     descr: "可选的转换函数。" +
+         "文档在通过`fetch`和`findOne`返回之前会通过该函数。" +
+         "且在被`observe`,`allow`,`deny`回调之前。"
     }
   ]
 };
@@ -539,34 +561,35 @@ Template.api.find = {
   id: "find",
   name: "<em>collection</em>.find(selector, [options])",
   locus: "Anywhere",
-  descr: ["Find the documents in a collection that match the selector."],
+  descr: ["用匹配的选择器寻找集合。"],
   args: [
     {name: "selector",
      type: "Mongo selector, or String",
      type_link: "selectors",
-     descr: "The query"}
+     descr: "选择器"}
   ],
   options: [
     {name: "sort",
      type: "Sort specifier",
      type_link: "sortspecifiers",
-     descr: "Sort order (default: natural order)"},
+     descr: "排序规则 (默认: 自然排序)"},
     {name: "skip",
      type: "Number",
-     descr: "Number of results to skip at the beginning"},
+     descr: "结果中要跳过开头的数"},
     {name: "limit",
      type: "Number",
-     descr: "Maximum number of results to return"},
+     descr: "最大返回的结果数"},
     {name: "fields",
      type: "Field specifier",
      type_link: "fieldspecifiers",
-     descr: "Dictionary of fields to return or exclude."},
+     descr: "词典字段用来返回或排除."},
     {name: "reactive",
      type: "Boolean",
-     descr: "(Client only) Default `true`; pass `false` to disable reactivity"},
+     descr: "(只客户端可用) 默认`true`；传递`false`将关闭响应"},
     {name: "transform",
      type: "Function",
-     descr: "Overrides `transform` on the  [`Collection`](#collections) for this cursor.  Pass `null` to disable transformation."}
+     descr: "对当前游标的[`集合`](#collections)使用转换.传递" +
+         "`null`关闭转换."}
   ]
 };
 
@@ -574,31 +597,32 @@ Template.api.findone = {
   id: "findone",
   name: "<em>collection</em>.findOne(selector, [options])",
   locus: "Anywhere",
-  descr: ["Finds the first document that matches the selector, as ordered by sort and skip options."],
+  descr: ["寻找匹配的并按指定选项的集合的第一个文档。" ],
   args: [
     {name: "selector",
      type: "Mongo selector, or String",
      type_link: "selectors",
-     descr: "The query"}
+     descr: "选择器"}
   ],
   options: [
     {name: "sort",
      type: "Sort specifier",
      type_link: "sortspecifiers",
-     descr: "Sort order (default: natural order)"},
+     descr: "排序规则 (默认: 自然排序)"},
     {name: "skip",
      type: "Number",
-     descr: "Number of results to skip at the beginning"},
+     descr: "结果中要跳过开头的数"},
     {name: "fields",
      type: "Field specifier",
      type_link: "fieldspecifiers",
-     descr: "Dictionary of fields to return or exclude."},
+     descr: "词典字段用来返回或排除."},
     {name: "reactive",
      type: "Boolean",
-     descr: "(Client only) Default true; pass false to disable reactivity"},
+     descr: "(只客户端可用) 默认`true`；传递`false`将关闭响应"},
     {name: "transform",
      type: "Function",
-     descr:  "Overrides `transform` on the [`Collection`](#collections) for this cursor.  Pass `null` to disable transformation."
+     descr: "对当前游标的[`集合`](#collections)使用转换.传递" +
+        "`null`关闭转换."
     }
   ]
 };
@@ -607,14 +631,14 @@ Template.api.insert = {
   id: "insert",
   name: "<em>collection</em>.insert(doc, [callback])",
   locus: "Anywhere",
-  descr: ["Insert a document in the collection.  Returns its unique _id."],
+  descr: ["插入文档到集合. 返回一个唯一的 _id."],
   args: [
     {name: "doc",
      type: "Object",
-     descr: "The document to insert. May not yet have an _id attribute, in which case Meteor will generate one for you."},
+     descr: "要插入的文档. 可能还没有_id 属性, 这种情况Meteor会为你创建一个" },
     {name: "callback",
      type: "Function",
-     descr: "Optional.  If present, called with an error object as the first argument and, if no error, the _id as the second."}
+     descr: "可选的，如果存在，调用一个错误对象当成第一个参数, 如果没有错误，_id为第二个参数"}
   ]
 };
 
@@ -622,27 +646,28 @@ Template.api.update = {
   id: "update",
   name: "<em>collection</em>.update(selector, modifier, [options], [callback])",
   locus: "Anywhere",
-  descr: ["Modify one or more documents in the collection. Returns the number of affected documents."],
+  descr: ["修改一个或更多的文档在集合中，返回受影响的文档数量。"],
   args: [
     {name: "selector",
      type: "Mongo selector, or object id",
      type_link: "selectors",
-     descr: "Specifies which documents to modify"},
+     descr: "指定要修改的文档"},
     {name: "modifier",
      type: "Mongo modifier",
      type_link: "modifiers",
-     descr: "Specifies how to modify the documents"},
+     descr: "指定如何修改文档"},
     {name: "callback",
      type: "Function",
-     descr: "Optional.  If present, called with an error object as the first argument and, if no error, the number of affected documents as the second."}
+     descr: "可选的。如果提供，则以错误对象为第一个参数，如果没错误，以受影响的" +
+         "的文档数作为第二个参数"}
   ],
   options: [
     {name: "multi",
      type: "Boolean",
-     descr: "True to modify all matching documents; false to only modify one of the matching documents (the default)."},
+     descr: "为真则修改所有的文档；为假则只修改其中一个匹配的文档（默认)."},
     {name: "upsert",
      type: "Boolean",
-     descr: "True to insert a document if no matching documents are found."}
+     descr: "为真则插入一个文档，在没有匹配文档被发现的情况. "}
   ]
 };
 
@@ -650,26 +675,28 @@ Template.api.upsert = {
   id: "upsert",
   name: "<em>collection</em>.upsert(selector, modifier, [options], [callback])",
   locus: "Anywhere",
-  descr: ["Modify one or more documents in the collection, or insert one if no matching documents were found. " +
-          "Returns an object with keys `numberAffected` (the number of documents modified) " +
-          " and `insertedId` (the unique _id of the document that was inserted, if any)."],
+  descr: ["修改集合中更多的文档，或者插入一个如果没有匹配的文档被发现。" +
+      "返回一个对象，对象拥有" +
+          "`numberAffected` (已修改文档的数目) " +
+          " 和 `insertedId` (被插入文档的唯一的 _id)."],
   args: [
     {name: "selector",
      type: "Mongo selector, or object id",
      type_link: "selectors",
-     descr: "Specifies which documents to modify"},
+     descr: "指定要修改的文档"},
     {name: "modifier",
      type: "Mongo modifier",
      type_link: "modifiers",
-     descr: "Specifies how to modify the documents"},
+     descr: "指定如何修改文档"},
     {name: "callback",
      type: "Function",
-     descr: "Optional.  If present, called with an error object as the first argument and, if no error, the number of affected documents as the second."}
+     descr: "可选的. 如果提供，则以一个错误对象作为第一个参数，如果没错误，则" +
+         "以受影响的文档数目作为第二个参数"}
   ],
   options: [
     {name: "multi",
      type: "Boolean",
-     descr: "True to modify all matching documents; false to only modify one of the matching documents (the default)."}
+     descr: "为真则修改所有的文档；为假则只修改匹配文档的其中一个(默认)"}
   ]
 };
 

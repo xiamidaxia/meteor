@@ -103,47 +103,41 @@ Example:
           count--;
           self.changed("counts", roomId, {count: count});
         }
-        // don't care about moved or changed
+        // 不用关心removed或者changed
       });
 
-      // Observe only returns after the initial added callbacks have
-      // run.  Now return an initial value and mark the subscription
-      // as ready.
+      //只有在初始化数据已经执行时候才监听。现在返回一个初始值和一个标记的订阅用于ready。
       initializing = false;
       self.added("counts", roomId, {count: count});
       self.ready();
 
-      // Stop observing the cursor when client unsubs.
-      // Stopping a subscription automatically takes
-      // care of sending the client any removed messages.
+      //当客户端未订阅停止监听
       self.onStop(function () {
         handle.stop();
       });
     });
 
-    // client: declare collection to hold count object
+    // client: 声明新的counts集合
     Counts = new Meteor.Collection("counts");
 
-    // client: subscribe to the count for the current room
+    // client: 订阅当前房子的数目
     Deps.autorun(function () {
       Meteor.subscribe("counts-by-room", Session.get("roomId"));
     });
 
-    // client: use the new collection
+    // client: 使用新的集合
     console.log("Current room has " +
                 Counts.findOne(Session.get("roomId")).count +
                 " messages.");
 
 {{#warning}}
-Meteor will emit a warning message if you call `Meteor.publish` in a
-project that includes the `autopublish` package.  Your publish function
-will still work.
+如果你在工程中使用包含`autopublish`包，Meteor在调用`meteor.publish`时会给出
+警告。不过你的发布函数仍然可以工作。
 {{/warning}}
 
 {{> api_box subscription_userId}}
 
-This is constant. However, if the logged-in user changes, the publish
-function is rerun with the new value.
+这是一个常量。然而，当已登用户改变了，这个发布函数将重新运行并产生新的值。
 
 {{> api_box subscription_added}}
 {{> api_box subscription_changed}}
@@ -152,8 +146,8 @@ function is rerun with the new value.
 
 {{> api_box subscription_onStop}}
 
-If you call [`observe`](#observe) or [`observeChanges`](#observe_changes) in your
-publish handler, this is the place to stop the observes.
+如果你能调用 [`observe`](#observe) 或 [`observeChanges`](#observe_changes)在你的
+发布函数，这个用来停止该observes。
 
 {{> api_box subscription_error}}
 {{> api_box subscription_stop}}
@@ -162,13 +156,10 @@ publish handler, this is the place to stop the observes.
 
 {{> api_box subscribe}}
 
-When you subscribe to a record set, it tells the server to send records to the
-client.  The client stores these records in local [Minimongo
-collections](#meteor_collection), with the same name as the `collection`
-argument used in the publish handler's `added`, `changed`, and `removed`
-callbacks.  Meteor will queue incoming attributes until you declare the
-[`Meteor.Collection`](#meteor_collection) on the client with the matching
-collection name.
+当你订阅一个记录集，它告诉服务端发送一条记录到客户端。客户端存储这些到本地的[Minimongo
+collections](#meteor_collection), 并以同样的名字当作用于发布函数的`added`,`changed`
+, `removed`回调的集合参数. Meteor将按顺序传入属性，直到你在客户端按匹配的集合名声明
+[`Meteor.Collection`](#meteor_collection)
 
     // okay to subscribe (and possibly receive data) before declaring
     // the client collection that will hold it.  assume "allplayers"
@@ -179,57 +170,44 @@ collection name.
     ...
     Players = new Meteor.Collection("players");
 
-The client will see a document if the document is currently in the published
-record set of any of its subscriptions.
+客户端会看见一个文档，当文档当前已经在任意订阅的已发布的记录集中.
 
-The `onReady` callback is called with no arguments when the server
-[marks the subscription as ready](#publish_ready). The `onError` callback is
-called with a [`Meteor.Error`](#meteor_error) if the subscription fails or is
-terminated by the server.
+`onReady`以无参数被调用，在服务端[标记一个订阅作为[`ready`]
+(#publish_ready).
+当订阅失败或者服务器终止时候,则将触发`onError` ，以[`Meteor.Error`](#meteor_error) 形式，
 
-`Meteor.subscribe` returns a subscription handle, which is an object with the
-following methods:
+`Meteor.subscribe`  返回订阅对象的句柄, 一个拥有以下方法的对象。
 
 <dl class="callbacks">
 {{#dtdd "stop()"}}
-Cancel the subscription. This will typically result in the server directing the
-client to remove the subscription's data from the client's cache.
+取消订阅. 通常会导致服务器直接从客户端缓存中删除订阅数据。
 {{/dtdd}}
 
 {{#dtdd "ready()"}}
-True if the server has [marked the subscription as ready](#publish_ready). A
-reactive data source.
+如果服务器[标记的订阅已经准备](#publish_ready)则为真.一个响应式数据源码.
 {{/dtdd}}
 </dl>
 
-If you call `Meteor.subscribe` within a [reactive computation](#reactivity),
-for example using
-[`Deps.autorun`](#deps_autorun), the subscription will automatically be
-cancelled when the computation is invalidated or stopped; it's not necessary
-to call `stop` on
-subscriptions made from inside `autorun`. However, if the next iteration
-of your run function subscribes to the same record set (same name and
-parameters), Meteor is smart enough to skip a wasteful
-unsubscribe/resubscribe. For example:
+如果你调用的`Meteor.subcribe`包含一个 [响应计算](#reactivity),
+例如，使用[`Deps.autorun`](#deps_autorun), 当计算失效或者停止时订阅就会自动取消；
+它不需要调用`stop`在订阅的时候，内部会自动运行。然而，如果你的函数的下一个迭代订阅了同样的
+记录集(同样的名字和同样的函数)，Meteor很聪明的会跳过"未订阅/重新订阅"。例如：
 
     Deps.autorun(function () {
       Meteor.subscribe("chat", {room: Session.get("current-room")});
       Meteor.subscribe("privateMessages");
     });
 
-This subscribes you to the chat messages in the current room and to your private
-messages. When you change rooms by calling `Session.set("current-room",
-"new-room")`, Meteor will subscribe to the new room's chat messages,
-unsubscribe from the original room's chat messages, and continue to
-stay subscribed to your private messages.
+这个订阅用于在当前房间获取聊天信息和私有信息。当你调用`Session.set("current-room",
+"new-room")`改变房间时候, Meteor将更新房间的聊天信息，并停止订阅原来房间的聊天信息，
+并继续保持订阅你私有的信息.
 
-If more than one subscription sends conflicting values for a field (same
-collection name, document ID, and field name), then the value on the client will
-be one of the published values, chosen arbitrarily.
+如果超过一个订阅发送一个冲突的值，在一个指定域中(同样的集合名，文档ID，或域名)，那么
+在客户端的这个值将成被发布的值的其中一个，且是任意选择的。
 
 <h2 id="methods_header"><span>Methods</span></h2>
 
-Methods are remote functions that Meteor clients can invoke.
+Methods是Meteor客户端能调用的远程函数.
 
 {{> api_box methods}}
 
@@ -251,356 +229,283 @@ Example:
       }
     });
 
-Calling `methods` on the server defines functions that can be called remotely by
-clients.  They should return an [EJSON](#ejson)-able value or throw an
-exception.  Inside your method invocation, `this` is bound to a method
-invocation object, which provides the following:
+定义在服务端的`methods`能被客户端远程调用。它们必须返回一个[EJSON](#ejson) -- 可用的值
+或抛出一个异常。 在方法的内部，`this`被绑定到调用该方法的对象，该对象提供一下属性：
 
-* `isSimulation`: a boolean value, true if this invocation is a stub.
-* `unblock`: when called, allows the next method from this client to
-begin running.
-* `userId`: the id of the current user.
-* `setUserId`: a function that associates the current client with a user.
-* `connection`: on the server, the [connection](#meteor_onconnection) this method call was received on.
+* `isSimulation`: 一个布尔值，当调用者为"存根"时.
+* `unblock`: 当被调用时，允许客户端的下一个方法开始执行。
+* `userId`: 当前用户的id.
+* `setUserId`: 一个函数用于连接当前客户端和用户。
+* `connection`: 在服务器端, 该方法调用的[connection](#meteor_onconnection)被收到.
 
-Calling `methods` on the client defines *stub* functions associated with
-server methods of the same name.  You don't have to define a stub for
-your method if you don't want to.  In that case, method calls are just
-like remote procedure calls in other systems, and you'll have to wait
-for the results from the server.
+调用客户端的`methods`方法定义了一个*存根*函数用来关联服务端相同名字的方法。你不需要为你的
+方法定义一个存根函数如果你不想要的话。在这种情况, 方法调用只是一种类似在其他系统中的远程程序
+调用，且你必须等待服务器端的结果返回。
 
-If you do define a stub, when a client invokes a server method it will
-also run its stub in parallel.  On the client, the return value of a
-stub is ignored.  Stubs are run for their side-effects: they are
-intended to *simulate* the result of what the server's method will do,
-but without waiting for the round trip delay.  If a stub throws an
-exception it will be logged to the console.
+如果你不想定义一个存根，当一个客户端调用服务端方法时，它还是会平行的调用它的存根。在客户端，
+一个存根的返回会被忽略。存根运行所产生的副作用：它是用来模拟服务端方法去做什么，但是没有等待
+往返产生的延迟。如果一个存根报错，它将被记录到控制台。
 
-You use methods all the time, because the database mutators
-([`insert`](#insert), [`update`](#update), [`remove`](#remove)) are implemented
-as methods. When you call any of these functions on the client, you're invoking
-their stub version that update the local cache, and sending the same write
-request to the server. When the server responds, the client updates the local
-cache with the writes that actually occurred on the server.
+你可以在任意时间使用方法，因为数据库存取器提供了
+([`insert`](#insert), [`update`](#update), [`remove`](#remove))等方法。
+且发送相同的写入请求到服务端。当服务端响应时，客户端更新本地缓存并写入这同样发生在服务端。
 
 {{> api_box method_invocation_userId}}
 
-The user id is an arbitrary string &mdash; typically the id of the user record
-in the database. You can set it with the `setUserId` function. If you're using
-the [Meteor accounts system](#accounts_api) then this is handled for you.
+用户id是一个任意的字符串-通常用户id记录在数据库中。你可以设置它,通过`setUserId`方法。
+如果你使用 [Meteor accounts system](#accounts_api)
+那么它会帮你处理。
 
 {{> api_box method_invocation_setUserId}}
 
-Call this function to change the currently logged in user on the
-connection that made this method call. This simply sets the value of
-`userId` for future method calls received on this connection. Pass
-`null` to log out the connection.
+在连接的时候调用方法用于改变当前登陆的用户。这简单的设置了`userId`用于以后连接时接收的方法调用.
+设置`null`可退出连接。
 
-If you are using the [built-in Meteor accounts system](#accounts_api) then this
-should correspond to the `_id` field of a document in the
-[`Meteor.users`](#meteor_users) collection.
+如果你使用
+[Meteor绑定的用户系统](#accounts_api),
+那么它就应该符合`_id`在[`Meteor.users`](#meteor_users)集合的文档的域.
 
-`setUserId` is not retroactive. It affects the current method call and
-any future method calls on the connection. Any previous method calls on
-this connection will still see the value of `userId` that was in effect
-when they started.
+`setUserId` 没有回溯能力. 它影响当前方法调用和未来方法调用。任何先前的方法调用仍然
+能看`userId`的值，在它已经开始并已经生效时候。
 
 {{> api_box method_invocation_isSimulation}}
 
 {{> api_box method_invocation_unblock}}
 
-On the server, methods from a given client run one at a time. The N+1th
-invocation from a client won't start until the Nth invocation
-returns. However, you can change this by calling `this.unblock`. This
-will allow the N+1th invocation to start running in a new fiber.
+在服务端，来自客户端的方法一次运行一个。来自客户端第N+1次调用不会开始，直到第第n次调用返回。
+然而，通过`this.unblock`你不能改变这种现象。这只会允许你在第N+1次调用运行在一个新的连接上。
 
 {{> api_box method_invocation_connection}}
 
 {{> api_box error}}
 
-If you want to return an error from a method, throw an exception.  Methods can
-throw any kind of exception.  But `Meteor.Error` is the only kind of error that
-a server will send to the client. If a method function throws a different
-exception, then it will be mapped to a sanitized version on the
-wire. Specifically, if the `sanitizedError` field on the thrown error is set to
-a `Meteor.Error`, then that error will be sent to the client. Otherwise, if no
-sanitized version is available, the client gets
+如果你想从方法返回一个错误，直接抛出一个异常。
+方法能抛出任意的异常。
+但是`Meteor.Error`是唯一一类能从服务端发送到客户端的异常。
+如果一个方法函数抛出一个不同的异常，那么它会被映射到一个被处理过的版本。
+具体而言，如果一个`处理过的错误`抛出的错误字段被处理为一个
+`Meteor.Error`,
+那么这个错误将被发送到客户端。除非，没有任何处理过的错误版本，客户端将接受到
 `Meteor.Error(500, 'Internal server error')`.
 
 {{> api_box meteor_call}}
 
-This is how to invoke a method.  It will run the method on the server.  If a
-stub is available, it will also run the stub on the client.  (See also
-[`Meteor.apply`](#meteor_apply), which is identical to `Meteor.call` except that
-you specify the parameters as an array instead of as separate arguments and you
-can specify a few options controlling how the method is executed.)
+这是讲如何调用方法。它会在服务端运行方法。
+如果一个存根可用，它也会在客户端运行存根。
+(类似的`Meteor.call`的方法有[`Meteor.apply`](#meteor_apply),
+该方法除了你可以指定参数为一个数组, 而不是使用单独的参数，
+且你能指定一些操作来控制方法的执行.)
 
-If you include a callback function as the last argument (which can't be
-an argument to the method, since functions aren't serializable), the
-method will run asynchronously: it will return nothing in particular and
-will not throw an exception.  When the method is complete (which may or
-may not happen before `Meteor.call` returns), the callback will be
-called with two arguments: `error` and `result`. If an error was thrown,
-then `error` will be the exception object.  Otherwise, `error` will be
-undefined and the return value (possibly undefined) will be in `result`.
+如果你包含一个回调函数当作最后的参数(不能只包含一个函数，因为函数是不可序列化的),该方法将被
+异步执行：特别情况它什么都没返回且也不会抛出异常。当方法执行完(可能发生在`Meteor.call`返回前)，
+回调函数将被以两个参数执行：`error` 和 `result`。如果一个错误被抛出，这个`error`将是
+一个错误对象。否则，`error`将是undefined且返回的数据(可能也是undefined)将被保存在
+`result`。
 
-    // async call
+    // 异步调用
     Meteor.call('foo', 1, 2, function (error, result) { ... } );
 
-If you do not pass a callback on the server, the method invocation will
-block until the method is complete.  It will eventually return the
-return value of the method, or it will throw an exception if the method
-threw an exception. (Possibly mapped to 500 Server Error if the
-exception happened remotely and it was not a `Meteor.Error` exception.)
+如果你在服务端没有传递一个回调，该方法调用将被阻塞直到方法执行完成。最终它将返回方法的值，
+或者它抛出一个异常。(可能映射到服务端的500错误，如果远程异常抛出，且它不是一个`Meteor.Error`
+异常)
 
-    // sync call
+    // 同步调用
     var result = Meteor.call('foo', 1, 2);
 
-On the client, if you do not pass a callback and you are not inside a
-stub, `call` will return `undefined`, and you will have no way to get
-the return value of the method. That is because the client doesn't have
-fibers, so there is not actually any way it can block on the remote
-execution of a method.
+在客户端，如果你没有传递一个回调，且你不在一个存根的里边呢，调用将返回 `undefiend` ,
+且你将没办法活的方法的返回值。这是因为客户端没有通道，所以事实上没有任何办法能阻塞一个远程
+方法的执行。
 
-Finally, if you are inside a stub on the client and call another
-method, the other method is not executed (no RPC is generated, nothing
-"real" happens).  If that other method has a stub, that stub stands in
-for the method and is executed. The method call's return value is the
-return value of the stub function.  The client has no problem executing
-a stub synchronously, and that is why it's okay for the client to use
-the synchronous `Meteor.call` form from inside a method body, as
-described earlier.
+最后，如果你在客户端的存根里边，且调用其他方法，其他方法不会被执行(不产生RPC，没任何“真正”
+的发生)。如果其他方法有一个存根，存根立足于该方法且该方法被执行. 该方法被调用的返回值是该存根
+函数的返回值。客户端同步执行一个存根没有出现问题，这也是为什么一个客户端在方法体内
+同样使用`Meteor.call`没有问题，如前所述。
 
-Meteor tracks the database writes performed by methods, both on the client and
-the server, and does not invoke `asyncCallback` until all of the server's writes
-replace the stub's writes in the local cache. In some cases, there can be a lag
-between the method's return value being available and the writes being visible:
-for example, if another method still outstanding wrote to the same document, the
-local cache may not be up to date until the other method finishes as well. If
-you want to process the method's result as soon as it arrives from the server,
-even if the method's writes are not available yet, you can specify an
-`onResultReceived` callback to [`Meteor.apply`](#meteor_apply).
+Meteor跟踪数据库写操作，不管是客户端还是服务端，都不会直接执行`异步回调`直到所有的服务端
+写入数据替换了本地缓存的存根的写入数据。在某些情况，可以有一个延时发生在返回方法值和写操作间：
+例如，如果另一个方法仍然未写入到相同的文档，本地的缓存可能不会是最新的直到其他方法也已经完成。
+如果你想要马上执行方法返回在它从服务端返回时候，即使该方法的的写操作还未完成，你可以指定一个
+`onResultReceived` 到 [`Meteor.apply`](#meteor_apply).
 
 {{> api_box meteor_apply}}
 
-`Meteor.apply` is just like `Meteor.call`, except that the method arguments are
-passed as an array rather than directly as arguments, and you can specify
-options about how the client executes the method.
+`Meteor.apply` 类似于 `Meteor.call`, 除了方法参数是通过数组而非直接作为arguments，
+且你能指定客户端如何操作该方法。
 
-<h2 id="connections"><span>Server connections</span></h2>
+<h2 id="connections"><span>服务端连接</span></h2>
 
-These functions manage and inspect the network connection between the
-Meteor client and server.
+这些函数管理并检查网络连接，在Meteor的客户端和服务端之间。
 
 {{> api_box status}}
 
-This method returns the status of the connection between the client and
-the server. The return value is an object with the following fields:
+该方法返回一个连接状态在客户端和服务端之间。返回值是一个对象，拥有以下字段：
 
 <dl class="objdesc">
 {{#dtdd name="connected" type="Boolean"}}
-  True if currently connected to the server. If false, changes and
-  method invocations will be queued up until the connection is
-  reestablished.
+  连接上服务器则为真。如果为假，变化和方法调用将被排队直到连接重新建立。
 {{/dtdd}}
 
 {{#dtdd name="status" type="String"}}
-  Describes the current reconnection status. The possible
-  values are `connected` (the connection is up and
-  running), `connecting` (disconnected and trying to open a
-  new connection), `failed` (permanently failed to connect; e.g., the client
-  and server support different versions of DDP), `waiting` (failed
-  to connect and waiting to try to reconnect) and `offline` (user has disconnected the connection).
+  描述当前的重连状态.可能的值为:
+    `connected`(连接已经建立并运行),
+    `connecting`(未连接，且正在试图打开一个新的连接),
+    `failed`(永久连接失败，如，服务端和客户端支持不同版本的DDP),
+    `waiting`(连接失败，且等待建立新的连接),
+    `offline`(用户未建立连接)。
 {{/dtdd}}
 
 {{#dtdd name="retryCount" type="Number"}}
-  The number of times the client has tried to reconnect since the
-  connection was lost. 0 when connected.
+  在失去连接时候客户端重新连接的次数。连上时为0。
 {{/dtdd}}
 
 {{#dtdd name="retryTime" type="Number or undefined"}}
-  The estimated time of the next reconnection attempt. To turn this
-  into an interval until the next reconnection, use
-  `retryTime - (new Date()).getTime()`. This key will
-  be set only when `status` is `waiting`.
+  下次企图重连的估计时间。要获取到下一个连接的时间，可使用
+  `retryTime - (new Date()).getTime()`。
+  这个值只有在`status`为`waiting`时候有。
 {{/dtdd}}
 
 {{#dtdd name="reason" type="String or undefined"}}
-  If `status` is `failed`, a description of why the connection failed.
+  `status` 是 `failed`, 这是一个描述连接为什么会失败。
 {{/dtdd}}
 </dl>
 
-Instead of using callbacks to notify you on changes, this is
-a [reactive](#reactivity) data source. You can use it in a
-[template](#templates) or [computation](#deps_autorun)
-to get realtime updates.
+这是一个[响应式](#reactivity) 数据源, 代替使用回调通知你信息改变,
+你可以在
+[template](#templates) 或 [computation](#deps_autorun)
+来获取一个实时的更新。
 
 {{> api_box reconnect}}
 
 {{> api_box disconnect}}
 
-Call this method to disconnect from the server and stop all
-live data updates. While the client is disconnected it will not receive
-updates to collections, method calls will be queued until the
-connection is reestablished, and hot code push will be disabled.
+调用断开方法，并停止一切实时数据更新。在客户端断开时它不会再接受来自集合的更新，方法调用将被进入队列
+知道连接重新建立，热代码推进将不可用。
 
-Call [Meteor.reconnect](#meteor_reconnect) to reestablish the connection
-and resume data transfer.
+调用 [Meteor.reconnect](#meteor_reconnect) 可重启连接并恢复数据传输。
 
-This can be used to save battery on mobile devices when real time
-updates are not required.
-
+这个能被用在节省电池，在手机设备上，当不需要更新数据时。
 
 {{> api_box onConnection}}
 
-`onConnection` returns an object with a single method `stop`.  Calling
-`stop` unregisters the callback, so that this callback will no longer
-be called on new connections.
+`onConnection` 返回一个对象，这个对象包含一个单独方法`stop`. 调用`stop`可注销回调，
+这样回调将不再被新连接调用。
 
-The callback is called with a single argument, the server-side
-`connection` representing the connection from the client.  This object
-contains the following fields:
+回调被调用时包含一个参数，服务端的`connection`代表来自客户端的连接。这个对象拥有以下字段：
 
 <dl class="objdesc">
 {{#dtdd name="id" type="String"}}
-A globally unique id for this connection.
+一个全局唯一的连接id
 {{/dtdd}}
 
 {{#dtdd name="close" type="Function"}}
-Close this DDP connection. The client is free to reconnect, but will
-receive a different connection with a new `id` if it does.
+关闭这个DDP连接。客户端可以自由的重新连接，但将接收到一个新的连接，并赋一个新的`id`.
 {{/dtdd}}
 
 {{#dtdd name="onClose" type="Function"}}
-Register a callback to be called when the connection is closed. If the
-connection is already closed, the callback will be called immediately.
+注册一个回调当连接关闭时候。如果连接已经关闭，这个回调将直接被调用。
 {{/dtdd}}
 </dl>
 
 {{#note}}
-Currently when a client reconnects to the server (such as after
-temporarily losing its Internet connection), it will get a new
-connection each time.  The `onConnection` callbacks will be called
-again, and the new connection will have a new connection `id`.
+目前，当客户端重新连接服务端(如暂时失去互联网连接)，它每次都会获得一个新的连接。
+`onConnection`的回调会被重新调用，且新的连接将拥有新的连接`id`。
 
-In the future, when client reconnection is fully implemented,
-reconnecting from the client will reconnect to the same connection on
-the server: the `onConnection` callback won't be called for that
-connection again, and the connection will still have the same
-connection `id`.
+在将来，当客户端重连被完全实施，来自客户端的重连将连到服务端相同的连接上: 这个`onConnection`的回调
+不再被重复调用, 且连接将仍然还有新的连接`id`。
+
 {{/note}}
 
 
 {{> api_box connect}}
 
-To call methods on another Meteor application or subscribe to its data
-sets, call `DDP.connect` with the URL of the application.
-`DDP.connect` returns an object which provides:
+为了调用其他Meteor应用或者订阅它的数据，调用`DDP.connect`使用其他应用的URL。
+`DDP.connect` 返回一个对象提供以下字段:
 
 * `subscribe` -
-  Subscribe to a record set. See
+  订阅一条记录,见
   [Meteor.subscribe](#meteor_subscribe).
 * `call` -
-  Invoke a method. See [Meteor.call](#meteor_call).
+  调用方法，见 [Meteor.call](#meteor_call).
 * `apply` -
-  Invoke a method with an argument array. See
+  使用数组参数调用一个方法，见
   [Meteor.apply](#meteor_apply).
 * `methods` -
-  Define client-only stubs for methods defined on the remote server. See
+  定义只客户端使用的存根，存根的方法定义在远程服务器, 见
   [Meteor.methods](#meteor_methods).
 * `status` -
-  Get the current connection status. See
+  获取当前的连接状态，见
   [Meteor.status](#meteor_status).
 * `reconnect` -
-  See [Meteor.reconnect](#meteor_reconnect).
+  见 [Meteor.reconnect](#meteor_reconnect).
 * `disconnect` -
-  See [Meteor.disconnect](#meteor_disconnect).
-* `onReconnect` - Set this to a function to be called as the first step of
-  reconnecting. This function can call methods which will be executed before
-  any other outstanding methods. For example, this can be used to re-establish
-  the appropriate authentication context on the new connection.
+  见 [Meteor.disconnect](#meteor_disconnect).
+* `onReconnect` -
+  将此设定成一个函数被调用在第一次重新连接的时候。这个函数将在其他未执行的函数之前调用。
+  例如，这个可以用在重建新连接响应的身份验证上。
 
-By default, clients open a connection to the server from which they're loaded.
-When you call `Meteor.subscribe`, `Meteor.status`, `Meteor.call`, and
-`Meteor.apply`, you are using a connection back to that default
-server.
+默认情况，客户端打开它们正在加载的服务器连接，当你调用
+`Meteor.subscribe`, `Meteor.status`, `Meteor.call`, 或
+`Meteor.apply`, 你将使用连接返回到默认服务器。
 
 
-<h2 id="collections"><span>Collections</span></h2>
+<h2 id="collections"><span>集合</span></h2>
 
-Meteor stores data in *collections*.  To get started, declare a
-collection with `new Meteor.Collection`.
+Meteor将数据存储到*collections*.开始，你可以使用
+`new Meteor.Collection`声明一个集合。
 
 {{> api_box meteor_collection}}
 
-Calling this function is analogous to declaring a model in a traditional ORM
-(Object-Relation Mapper)-centric framework. It sets up a *collection* (a storage
-space for records, or "documents") that can be used to store a particular type
-of information, like users, posts, scores, todo items, or whatever matters to
-your application.  Each document is a EJSON object.  It includes an `_id`
-property whose value is unique in the collection, which Meteor will set when you
-first create the document.
+调用类似于生命一个传统的ORM(Object-Relation Mapper)
+模型为中心的框架。它被建立为一个*集合*(一个存储记录或文档的地方), 集合可以用于存储特定类型的信息，
+例如用户，文章，分数，或者代办事宜，或者任意在你应用程序中的事项。任何的文档都是一个EJSON 对象。
+它包含一个`_id`属性，这个属性用来标记唯一的集合，Meteor会在第一次创建文档的时候就设定它。
 
     // common code on client and server declares livedata-managed mongo
     // collection.
     Chatrooms = new Meteor.Collection("chatrooms");
     Messages = new Meteor.Collection("messages");
 
-The function returns an object with methods to [`insert`](#insert)
-documents in the collection, [`update`](#update) their properties, and
-[`remove`](#remove) them, and to [`find`](#find) the documents in the
-collection that match arbitrary criteria. The way these methods work is
-compatible with the popular Mongo database API.  The same database API
-works on both the client and the server (see below).
+这个函数返回一个对象，这个对象可以[`插入`](#insert) 文档，
+[`更新`](#update) 它的属性，
+[`移除`](#remove) 他们, 或者 在匹配任意标准的集合中[`寻找`](#find)文档。
+这些方法和流行的Mongo数据库API相兼容。相同的的数据库API可以工作在客户端也可以在服务端(如下)。
 
-    // return array of my messages
+    // 返回我的信息的数组
     var myMessages = Messages.find({userId: Session.get('myUserId')}).fetch();
 
-    // create a new message
+    // 创建一条新的信息
     Messages.insert({text: "Hello, world!"});
 
-    // mark my first message as "important"
+    // 标记我的第一条信息为"impotant"
     Messages.update(myMessages[0]._id, {$set: {important: true}});
 
-If you pass a `name` when you create the collection, then you are
-declaring a persistent collection &mdash; one that is stored on the
-server and seen by all users. Client code and server code can both
-access the same collection using the same API.
+如果你在创建集合时传递一个`name`,那么你可声明一个持久化的集合 -- 一个可以存储在服务端且被所有用户
+所见。客户端的代码和服务端的带没法都可以使用相同的集合和使用相同的API.
 
-Specifically, when you pass a `name`, here's what happens:
+特别的，当你传递`name`，将发生：
 
-* On the server, a collection with that name is created on a backend
-Mongo server. When you call methods on that collection on the server,
-they translate directly into normal Mongo operations (after checking that
-they match your [access control rules](#allow)).
+* 在服务端， 一个拥有该名字的集合被创建到后段Mongo服务器.当你在服务端调用该集合的方法，
+他们直接转换为正常的Mongo操作 (在检测出你的[存取控制为允许时候](#allow))
 
-* On the client, a Minimongo instance is
-created. Minimongo is essentially an in-memory, non-persistent
-implementation of Mongo in pure JavaScript. It serves as a local cache
-that stores just the subset of the database that this client is working
-with. Queries on the client ([`find`](#find)) are served directly out of
-this cache, without talking to the server.
+* 在客户端，一个Minimongo实例被创建，Minimongo 本质上是一个内存，非持久性的用纯javascript实现的Mongo.
+它提供一个本地缓存用来存储该数据库的子集, 在客户端[查询](#find)也是直接从缓存中获取，没有通知服务端
 
-* When you write to the database on the client ([`insert`](#insert),
-[`update`](#update), [`remove`](#remove)), the command is executed
-immediately on the client, and, simultaneously, it's shipped up to the
-server and executed there too.  The `livedata` package is
-responsible for this.
+* 当你在客户端写入数据
+ ([`insert`](#insert),[`update`](#update), [`remove`](#remove)),
+ 命令直接在客户端执行，同时，它在传到服务端并再运行。`即时数据包`就是用这种方式。
 
-If you pass `null` as the `name`, then you're creating a local
-collection. It's not synchronized anywhere; it's just a local scratchpad
-that supports Mongo-style [`find`](#find), [`insert`](#insert),
-[`update`](#update), and [`remove`](#remove) operations.  (On both the
-client and the server, this scratchpad is implemented using Minimongo.)
+如果你传递 `null` 当作 `name` ，那么你将传递本地的集合。
+他非同步到任何地方；它只是本地暂存器, 并支持Mongo方式 --  [`find`](#find), [`insert`](#insert),
+[`update`](#update), and [`remove`](#remove) 操作.  (在客户端和服务端，这个暂存器都是使用
+Minimongo实现.)
 
-By default, Meteor automatically publishes every document in your
-collection to each connected client.  To turn this behavior off, remove
-the `autopublish` package:
+默认情况，Meteor自动发布每个文档在你的集合,在连接的每一个客户端上。如果要关闭该行为，需要移除
+`autopublish` 包:
 
     $ meteor remove autopublish
 
-and instead call [`Meteor.publish`](#meteor_publish) to specify which parts of
-your collection should be published to which users.
+如果不想用这种方式可以调用 [`Meteor.publish`](#meteor_publish)
+来指定你的集合想要发布哪一部分到哪一个用户。
 
     // Create a collection called Posts and put a document in it. The
     // document will be immediately visible in the local copy of the
@@ -624,13 +529,9 @@ your collection should be published to which users.
       Scratchpad.insert({number: i * 2});
     assert(Scratchpad.find({number: {$lt: 9}}).count() === 5);
 
-
-If you specify a `transform` option to the `Collection` or any of its retrieval
-methods, documents are passed through the `transform` function before being
-returned or passed to callbacks.  This allows you to add methods or otherwise
-modify the contents of your collection from their database representation.  You
-can also specify `transform` on a particular `find`, `findOne`, `allow`, or
-`deny` call.
+如果你指定一个`transform`操作来集合或其任何索引的方法，文档将通过该`transform`方法，在被返回或通过
+回调之前。这允许你添加方法或者修改集合的内容。你可以指定 `transform` 中特别实现的方法
+`find`, `findOne`, `allow`, or `deny` call.
 
     // An Animal class that takes a document in its constructor
     Animal = function (doc) {
@@ -651,88 +552,65 @@ can also specify `transform` on a particular `find`, `findOne`, `allow`, or
     Animals.insert({name: "raptor", sound: "roar"});
     Animals.findOne({name: "raptor"}).makeNoise(); // prints "roar"
 
-`transform` functions are not called reactively.  If you want to add a
-dynamically changing attribute to an object, do it with a function that computes
-the value at the time it's called, not by computing the attribute at `transform`
-time.
+`transform` 函数不能响应式调用。如果你想体那家动态的属性改变到你的对象，使用一个函数，该函数计下值被调用
+时间，不计算`transform`的时间。
 
 {{#warning}}
-In this release, Minimongo has some limitations:
+在此版本中， Minimongo 有如下限制:
 
-* `$pull` in modifiers can only accept certain kinds
-of selectors.
-* `$` to denote the matched array position is not
-supported in modifier.
-* `findAndModify`, aggregate functions, and
-map/reduce aren't supported.
+* `$pull` 只能接收主要类别的选择器.
+* `$` 修改后用来匹配数组中的位置不再支持。
+* `findAndModify`, 聚合函数，map/reduce 不支持.
 
-All of these will be addressed in a future release. For full
-Minimongo release notes, see packages/minimongo/NOTES
-in the repository.
+所有这些将在以后的版本中解决。对于全部的 Minimongo release 说明, 参见 packages/minimongo/NOTES
 {{/warning}}
 
 {{#warning}}
-Minimongo doesn't currently have indexes. It's rare for this to be an
-issue, since it's unusual for a client to have enough data that an
-index is worthwhile.
+Minimongo 目前没有索引。这是罕见的一个问题，
+因为客户端拥有足够多的数据让索引有价值是很不寻常的。
 {{/warning}}
 
 {{> api_box find}}
 
-`find` returns a cursor.  It does not immediately access the database or return
-documents.  Cursors provide `fetch` to return all matching documents, `map` and
-`forEach` to iterate over all matching documents, and `observe` and
-`observeChanges` to register callbacks when the set of matching documents
-changes.
+`find` 返回一个游标。它不会直接访问数据库或返回文档。游标提供`fetch`来返回所有匹配的文档，
+`map`和`forEach`来遍历所有匹配的文档，`observe` 和 `observeChanges`用来
+注册回调，所有匹配的文档改变时候调用。
 
 {{#warning}}
-Collection cursors are not query snapshots.  If the database changes
-between calling `Collection.find` and fetching the
-results of the cursor, or while fetching results from the cursor,
-those changes may or may not appear in the result set.
+集合游标不是用来查询快照。当数据库在调用`Collections.find`和获取游标的结果或游标读取结果之间
+改变时，这些改变可能会也可能不会出现在结果中。
 {{/warning}}
 
-Cursors are a reactive data source.  The first time you retrieve a
-cursor's documents with `fetch`, `map`, or `forEach` inside a
-reactive computation (eg, a template or
-[`autorun`](#deps_autorun)), Meteor will register a
-dependency on the underlying data.  Any change to the collection that
-changes the documents in a cursor will trigger a recomputation.  To
-disable this behavior, pass `{reactive: false}` as an option to
-`find`.
+游标是一个响应式数据源码。当你第一次检索一个游标文档，并使用`fetch`,`map`,或
+`forEach`包含到响应计算中（例如，一个模板或使用
+[`autorun`](#deps_autorun)), Meteor将注册一个依赖的基础数据.
+任何对集合的改变即在游标中改变文档，都将触发重新计算。要想禁止该行为，传递
+`{reactive: false}` 到 `find` 上。
 
 {{> api_box findone}}
 
-Equivalent to `find(selector, options).fetch()[0]` with
+相当于 `find(selector, options).fetch()[0]` 并加上选项
 `options.limit = 1`.
 
 {{> api_box insert}}
 
-Add a document to the collection. A document is just an object, and
-its fields can contain any combination of EJSON-compatible datatypes
-(arrays, objects, numbers, strings, `null`, true, and false).
+添加一个集合的文档。文档是一个对象，且它的字段可以包含任何EJSON数据类型
+(arrays, objects, numbers, strings, `null`, true, and false)的组合.
 
-`insert` will generate a unique ID for the object you pass, insert it
-in the database, and return the ID. When `insert` is called from
-untrusted client code, it will be allowed only if passes any
-applicable [`allow`](#allow) and [`deny`](#deny) rules.
+`insert`会产生一个唯一的ID在你传递的对象上，插入数据库后，并返回ID。当`insert`被
+不被信任的客户端调用，它则必须通过[`allow`](#allow) 和 [`deny`](#deny)才被允许。
 
-On the server, if you don't provide a callback, then `insert` blocks
-until the database acknowledges the write, or throws an exception if
-something went wrong.  If you do provide a callback, `insert` still
-returns the ID immediately.  Once the insert completes (or fails), the
-callback is called with error and result arguments.  In an error case,
-`result` is undefined.  If the insert is successful, `error` is
-undefined and `result` is the new document ID.
+在服务端，如果你没有提供一个回调，那么`insert`会被阻塞直到数据库承认写入或者抛出
+一个异常如果有错误的话。如果你提供回调，`insert`仍然返回直接返回ID。一旦插入完成
+(或失败)，回调就被以错误或结果参数调用。在错误情况，`result`是undefined。如果插入
+成功，`error`为undefined而`result`则为新文档的ID。
 
-On the client, `insert` never blocks.  If you do not provide a callback
-and the insert fails on the server, then Meteor will log a warning to
-the console.  If you provide a callback, Meteor will call that function
-with `error` and `result` arguments.  In an error case, `result` is
-undefined.  If the insert is successful, `error` is undefined and
-`result` is the new document ID.
+在客户端，` 插入`从来不会被阻塞。如果你没有提供回调且插入到服务端失败，那么Meteor将输出
+一条警告到控制台。如果你提供回调，Meteor将调用该回调并以`error`和`result`参数。
+在错误的情况，`result`为undefeind。如果插入成功,`error`为undefined而`result`则
+为新文档的ID。
 
-Example:
+例如:
 
     var groceriesId = Lists.insert({name: "Groceries"});
     Items.insert({list: groceriesId, name: "Watercress"});
@@ -740,41 +618,30 @@ Example:
 
 {{> api_box update}}
 
-Modify documents that match `selector` according to `modifier` (see
+修改匹配选择器的文档，根据`modifier`(见
 [modifier documentation](#modifiers)).
 
-The behavior of `update` differs depending on whether it is called by
-trusted or untrusted code. Trusted code includes server code and
-method code. Untrusted code includes client-side code such as event
-handlers and a browser's JavaScript console.
+`update`行为取决于它是否被信任或被不被信任的代码调用。受信任的代码包含服务器的代码
+和方法代码。不受信任的包含客户端的代码如时间句柄和浏览器Javascript从控制台.
 
-- Trusted code can modify multiple documents at once by setting
-  `multi` to true, and can use an arbitrary [Mongo
-  selector](#selectors) to find the documents to modify. It bypasses
-  any access control rules set up by [`allow`](#allow) and
-  [`deny`](#deny). The number of affected documents will be returned
-  from the `update` call if you don't pass a callback.
+- 受信任代码可以一次修改多个文档，只要设定`multi`为真，且你能使用任意的
+  [Mongo 选择器](#selectors) 来寻找要修改的文档。它绕过任意的访问控制规则
+  [`allow`](#allow) 和 [`deny`](#deny)。受影响的文档从`update`回调返回，
+  如果你传递回调。
 
-- Untrusted code can only modify a single document at once, specified
-  by its `_id`. The modification is allowed only after checking any
-  applicable [`allow`](#allow) and [`deny`](#deny) rules. The number
-  of affected documents will be returned to the callback. Untrusted
-  code cannot perform upserts, except in insecure mode.
+- 未信任的代码只能一次修改一个文档，通过指定的`_id`。这中修改只在检测适应
+  [`allow`](#allow) 和 [`deny`](#deny) 规则后才被允许修改。
+  受影响的文档数目将被返回到回调。未信任的代码不能执行upserts,除了在不安全模式。
 
-On the server, if you don't provide a callback, then `update` blocks
-until the database acknowledges the write, or throws an exception if
-something went wrong.  If you do provide a callback, `update` returns
-immediately.  Once the update completes, the callback is called with a
-single error argument in the case of failure, or a second argument
-indicating the number of affected documents if the update was successful.
+在服务端，如果你没有提供回调，`update`将被阻塞直到数据库承认写入或抛出一个异常。如果你
+提供回调，`update`直接返回。一旦更新完成，回调错误参数返回在错误情况下，或者以指定受
+影响文档数目为第二个参数当成功更新时候。
 
-On the client, `update` never blocks.  If you do not provide a callback
-and the update fails on the server, then Meteor will log a warning to
-the console.  If you provide a callback, Meteor will call that function
-with an error argument if there was an error, or a second argument
-indicating the number of affected documents if the update was successful.
+在客户端，`update`从不被阻塞。如果没提供回调且在服务端更新失败，那么Meteor将输出一个警告
+到控制台。如果提供回调，Meteor将调用该函数，并以一个错误参数如果错误的话，或者以一个指定
+受影响文档数目作为第二个参数如果成功更新的话。
 
-Client example:
+客户端例子:
 
     // When the givePoints button in the admin dashboard is pressed,
     // give 5 points to the current player. The new score will be
@@ -785,7 +652,7 @@ Client example:
       }
     });
 
-Server example:
+服务端例子:
 
     // Give the "Winner" badge to each user with a score greater than
     // 10. If they are logged in and their badge list is visible on the
@@ -798,10 +665,9 @@ Server example:
       }
     });
 
-You can use `update` to perform a Mongo upsert by setting the `upsert`
-option to true. You can also use the [`upsert`](#upsert) method to perform an
-upsert that returns the _id of the document that was inserted (if there was one)
-in addition to the number of affected documents.
+你可以使用`update`来执行一个Mongo的upsert，只要将设定中的`upsert`设置为真。你
+同样可以使用 [`upsert`](#upsert) 方法来执行一个upsert，这样它会返回已插入文档(如果只有一个)
+的_id，此外还有受影响文档的数目.
 
 {{> api_box upsert}}
 
