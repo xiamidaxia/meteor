@@ -705,15 +705,15 @@ Template.api.remove = {
   id: "remove",
   name: "<em>collection</em>.remove(selector, [callback])",
   locus: "Anywhere",
-  descr: ["Remove documents from the collection"],
+  descr: ["从集合中移除文档"],
   args: [
     {name: "selector",
      type: "Mongo selector, or object id",
      type_link: "selectors",
-     descr: "Specifies which documents to remove"},
+     descr: "指定要移除的文档"},
     {name: "callback",
      type: "Function",
-     descr: "Optional.  If present, called with an error object as its argument."}
+     descr: "可选的. 如果提供，以一个错误对象作为参数被调用" }
   ]
 };
 
@@ -721,17 +721,17 @@ Template.api.allow = {
   id: "allow",
   name: "<em>collection</em>.allow(options)",
   locus: "Server",
-  descr: ["Allow users to write directly to this collection from client code, subject to limitations you define."],
+  descr: ["允许用户在客户端直接写入到集合, 并受你提供的限制"],
   options: [
     {name: "insert, update, remove",
      type: "Function",
-     descr: "Functions that look at a proposed modification to the database and return true if it should be allowed."},
+     descr: "函数类似数据库推荐的修改方法，返回真如果被允许的话"},
     {name: "fetch",
      type: "Array of String",
-     descr: "Optional performance enhancement. Limits the fields that will be fetched from the database for inspection by your `update` and `remove` functions."},
+     descr: "可选的增强功能. 限制通过`update`和`remove`从数据库获取的字段"},
     {name: "transform",
      type: "Function",
-     descr: "Overrides `transform` on the  [`Collection`](#collections).  Pass `null` to disable transformation."}
+     descr: "见 [`集合`](#collections)中的`transform`，设置null关闭重写."}
   ]
 };
 
@@ -739,17 +739,17 @@ Template.api.deny = {
   id: "deny",
   name: "<em>collection</em>.deny(options)",
   locus: "Server",
-  descr: ["Override `allow` rules."],
+  descr: ["见 `allow` 规则."],
   options: [
     {name: "insert, update, remove",
      type: "Function",
-     descr: "Functions that look at a proposed modification to the database and return true if it should be denied, even if an `allow` rule says otherwise."},
+     descr: "函数用来查看在数据库允许的修改，返回true如果被拒绝, 即使`allow`规则允许"},
     {name: "fetch",
      type: "Array of Strings",
-     descr: "Optional performance enhancement. Limits the fields that will be fetched from the database for inspection by your `update` and `remove` functions."},
+     descr: "可选的增强功能.限制通过`update`和`remove`从数据库获取的字段"},
     {name: "transform",
      type: "Function",
-     descr:  "Overrides `transform` on the  [`Collection`](#collections).  Pass `null` to disable transformation."}
+     descr:  "见 [`集合`](#collections)中的`transform`，设置null关闭重写."}
   ]
 };
 
@@ -758,28 +758,28 @@ Template.api.cursor_count = {
   id: "count",
   name: "<em>cursor</em>.count()",
   locus: "Anywhere",
-  descr: ["Returns the number of documents that match a query."]
+  descr: ["返回匹配文档的数目."]
 };
 
 Template.api.cursor_fetch = {
   id: "fetch",
   name: "<em>cursor</em>.fetch()",
   locus: "Anywhere",
-  descr: ["Return all matching documents as an Array."]
+  descr: ["以数组方式返回所有匹配的文档."]
 };
 
 Template.api.cursor_foreach = {
   id: "foreach",
   name: "<em>cursor</em>.forEach(callback, [thisArg])",
   locus: "Anywhere",
-  descr: ["Call `callback` once for each matching document, sequentially and synchronously."],
+  descr: ["按顺序并同步遍历匹配的文档并每次调用回调."],
   args: [
     {name: "callback",
      type: "Function",
-     descr: "Function to call. It will be called with three arguments: the document, a 0-based index, and <em>cursor</em> itself."},
+     descr: "要调用的函数. 它会以三个参数调用: 一个文档, 一个0开始的索引index, 和 <em>游标</em> 本身."},
     {name: "thisArg",
      type: "Any",
-     descr: "An object which will be the value of `this` inside `callback`."}
+     descr: "用在回调函数内部的`this`对象."}
   ]
 };
 
@@ -787,14 +787,14 @@ Template.api.cursor_map = {
   id: "map",
   name: "<em>cursor</em>.map(callback, [thisArg])",
   locus: "Anywhere",
-  descr: ["Map callback over all matching documents.  Returns an Array."],
+  descr: ["遍历回调在匹配的文档.  返回一个数组."],
   args: [
     {name: "callback",
      type: "Function",
-     descr: "Function to call. It will be called with three arguments: the document, a 0-based index, and <em>cursor</em> itself."},
+     descr: "要调用的函数. 它会以三个参数调用: 一个文档, 一个0开始的索引index, 和 <em>游标</em> 本身."},
     {name: "thisArg",
      type: "Any",
-     descr: "An object which will be the value of `this` inside `callback`."}
+     descr: "用在回调内部的`this`对象."}
   ]
 };
 
@@ -802,7 +802,7 @@ Template.api.cursor_rewind = {
   id: "rewind",
   name: "<em>cursor</em>.rewind()",
   locus: "Anywhere",
-  descr: ["Resets the query cursor."],
+  descr: ["重置查询游标."],
   args: [ ]
 };
 
@@ -810,11 +810,11 @@ Template.api.cursor_observe = {
   id: "observe",
   name: "<em>cursor</em>.observe(callbacks)",
   locus: "Anywhere",
-  descr: ["Watch a query.  Receive callbacks as the result set changes."],
+  descr: ["监听查询, 在查询结果该改变时调用回调."],
   args: [
     {name: "callbacks",
      type: "Object",
-     descr: "Functions to call to deliver the result set as it changes"}
+     descr: "函数用于在查询结果改变时候调用."}
   ]
 };
 
@@ -822,11 +822,11 @@ Template.api.cursor_observe_changes = {
   id: "observe_changes",
   name: "<em>cursor</em>.observeChanges(callbacks)",
   locus: "Anywhere",
-  descr: ["Watch a query.  Receive callbacks as the result set changes.  Only the differences between the old and new documents are passed to the callbacks."],
+  descr: ["监听查询. 在查询结果该改变时调用回调.只将新的和旧的文档的差异数据传给回调. " ],
   args: [
     {name: "callbacks",
      type: "Object",
-     descr: "Functions to call to deliver the result set as it changes"}
+     descr: "函数用于在查询结果改变时候调用."}
   ]
 };
 
@@ -834,7 +834,7 @@ Template.api.id = {
   id: "meteor_id",
   name: "Random.id()",
   locus: "Anywhere",
-  descr: ["Return a unique identifier."],
+  descr: ["返回一个唯一标识符."],
   args: [ ]
 };
 
@@ -842,11 +842,12 @@ Template.api.collection_object_id = {
   id: "collection_object_id",
   name: "new Meteor.Collection.ObjectID(hexString)",
   locus: "Anywhere",
-  descr: ["Create a Mongo-style `ObjectID`.  If you don't specify a `hexString`, the `ObjectID` will generated randomly (not using MongoDB's ID construction rules)."],
+  descr: ["创建一个Mongo式 `ObjectID`. 如果你没指定`hexString`, " +
+      "`ObjectID`将随机生成(不使用MongoDB的ID构造规则)."],
   args: [ {
     name: "hexString",
     type: "String",
-    descr: ["Optional.  The 24-character hexadecimal contents of the ObjectID to create"]
+    descr: ["可选的.用于创建ObjectID的24个16进制字符"]
   }]
 };
 

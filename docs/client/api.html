@@ -671,53 +671,38 @@ Minimongo 目前没有索引。这是罕见的一个问题，
 
 {{> api_box upsert}}
 
-Modify documents that match `selector` according to `modifier`, or insert
-a document if no documents were modified. `upsert` is the same as calling
-`update` with the `upsert` option set to true, except that the return
-value of `upsert` is an object that contain the keys `numberAffected`
-and `insertedId`. (`update` returns only the number of affected documents.)
+修改匹配的文档，或者插入一个文档在没有文档被修改时。`upsert`类似于调用`update`并将其
+`upsert`选项设置为true，除了`upsert`返回的对象包含 `numberAffected`
+和 `insertedId`. (`update` 只返回受影响文档的数目.)
 
 {{> api_box remove}}
 
-Find all of the documents that match `selector` and delete them from
-the collection.
+寻找所有匹配选择器的文档, 并从集合中删除它们。
 
-The behavior of `remove` differs depending on whether it is called by
-trusted or untrusted code. Trusted code includes server code and
-method code. Untrusted code includes client-side code such as event
-handlers and a browser's JavaScript console.
+`remove`的行为取决于它是被受信任的代码还是不受信任的代码调用。受信任的代码包含服务端
+代码和方法。不受信任的包含客户端代码如事件句柄和浏览器javascript控制台。
 
-- Trusted code can use an arbitrary [Mongo selector](#selectors) to
-  find the documents to remove, and can remove more than one document
-  at once by passing a selector that matches multiple documents. It
-  bypasses any access control rules set up by [`allow`](#allow) and
-  [`deny`](#deny). The number of removed documents will be returned
-  from `remove` if you don't pass a callback.
+- 受信任的代码能使用任意的 [Mongo选择器](#selectors)来寻找要被删除的文档，且能
+  一次删除更多的文档通过匹配多个文档的选择器。它绕过任何的访问控制规则如
+  [`allow`](#allow) 和 [`deny`](#deny)。
+  移除文档的数目将被返回如果你没有指定回调的话。
 
-  As a safety measure, if `selector` is omitted (or is `undefined`),
-  no documents will be removed. Set `selector` to `{}` if you really
-  want to remove all documents from your collection.
+  作为一个安全措施，如果选择器漏掉（或未定义），没有文档会被移除。设定选择器为`{}`
+  如果你真的想要移除所有文档的话。
 
-- Untrusted code can only remove a single document at a time,
-  specified by its `_id`. The document is removed only after checking
-  any applicable [`allow`](#allow) and [`deny`](#deny) rules. The
-  number of removed documents will be returned to the callback.
+- 未信任的代码只能一次移除一个文档，通过指定`_id`。文档只有检测通过
+  [`allow`](#allow) 和 [`deny`](#deny) 规则之后才能被移除。 移除的文档
+  数目将被返回到回调函数。
 
-On the server, if you don't provide a callback, then `remove` blocks
-until the database acknowledges the write and then returns the number
-of removed documents, or throws an exception if
-something went wrong.  If you do provide a callback, `remove` returns
-immediately.  Once the remove completes, the callback is called with a
-single error argument in the case of failure, or a second argument
-indicating the number of removed documents if the remove was successful.
+在服务端，如果你没有提供回调，那么`remove`将阻塞直到数据库确认已写入并返回移除文档的
+数目或抛出异常。如果你提供回调，`remove`直接返回。一旦删除完成，回调将以一个错误对象为
+参数，或者成功情况以删除文档数目作为第二个参数。
 
-On the client, `remove` never blocks.  If you do not provide a callback
-and the remove fails on the server, then Meteor will log a warning to the
-console.  If you provide a callback, Meteor will call that function with an
-error argument if there was an error, or a second argument indicating the number
-of removed documents if the remove was successful.
+在服务端，`remove`从来不会被阻塞。如果你没提供回调函数且移除失败，那么Meteor会输出警告到
+控制台。如果你提供回调，Meteor调用回调并以一个错误对象作为参数，或者成功情况以删除文档
+数目作为第二个参数。
 
-Client example:
+客户端例子:
 
     // When the remove button is clicked on a chat message, delete
     // that message.
@@ -727,7 +712,7 @@ Client example:
       }
     });
 
-Server example:
+服务端例子:
 
     // When the server starts, clear the log, and delete all players
     // with a karma of less than -2.
@@ -740,69 +725,52 @@ Server example:
 
 {{> api_box allow}}
 
-When a client calls `insert`, `update`, or `remove` on a collection, the
-collection's `allow` and [`deny`](#deny) callbacks are called
-on the server to determine if the write should be allowed. If at least
-one `allow` callback allows the write, and no `deny` callbacks deny the
-write, then the write is allowed to proceed.
+当一个客户端调用`insert`,`update`,或`remove`，集合中的`allow`和[`deny`](#deny)
+回调在服务端被调用用来确定写入是否被允许。如果至少一个`allow`回调允许写入，且没有`deny`
+回调拒绝写入，那么写入将被允许。
 
-These checks are run only when a client tries to write to the database
-directly, for example by calling `update` from inside an event
-handler. Server code is trusted and isn't subject to `allow` and `deny`
-restrictions. That includes methods that are called with `Meteor.call`
-&mdash; they are expected to do their own access checking rather than
-relying on `allow` and `deny`.
+这些检测只有在客户端试图直接写入数据才会运行，例如通过内置事件句柄调用`update`。
+服务器代码是被信任的且不需要受`allow`和`deny`限制。这包括调用`Meteor.call`的方法--
+我们希望他们做自己的访问检测，而不是依赖于`allow`和`deny`。
 
-You can call `allow` as many times as you like, and each call can
-include any combination of `insert`, `update`, and `remove`
-functions. The functions should return `true` if they think the
-operation should be allowed. Otherwise they should return `false`, or
-nothing at all (`undefined`). In that case Meteor will continue
-searching through any other `allow` rules on the collection.
+你能调用`allow`任意次，且每次都能包含任何的`insert`,`update`和`remove`组合。
+这些函数会返回`true`，如果他们认为操作允许。否则返回`false`，或者什么都没有
+(`undefined`). 这种情况Meteor将通过任何其他的`allow`规则继续搜索。
 
-The available callbacks are:
+可用的回调有:
 
 <dl class="callbacks">
 {{#dtdd "insert(userId, doc)"}}
-The user `userId` wants to insert the document `doc` into the
-collection. Return `true` if this should be allowed.
+用户`userId`想要插入文档`doc`到集合中。返回`真`如果他被允许。
 {{/dtdd}}
 
 {{#dtdd "update(userId, doc, fieldNames, modifier)"}}
 
-The user `userId` wants to update a document `doc`. (`doc` is the
-current version of the document from the database, without the
-proposed update.) Return `true` to permit the change.
+用户`userId`想要更新文档`doc`。(`doc`是当前来自数据库的文档版本，没有提供更新)，
+返回`true`如果修改通过。
 
-`fieldNames` is an array of the (top-level) fields in `doc` that the
-client wants to modify, for example
-`['name',`&nbsp;`'score']`.
+`fieldNames`是想在客户端修改的`doc`字段（顶层）的数组，例如:
+`['name',`&nbsp;`'score']`
 
-`modifier` is the raw Mongo modifier that
-the client wants to execute; for example,
+`modifier`是原始的Mongo修饰语，用于客户端想要的执行；例如，
 `{$set: {'name.first': "Alice"}, $inc: {score: 1}}`.
 
-Only Mongo modifiers are supported (operations like `$set` and `$push`).
-If the user tries to replace the entire document rather than use
-$-modifiers, the request will be denied without checking the `allow`
-functions.
+只有Mongo修饰符才能被支持(操作类似`$set`和`$push`)。
+如果用户试图替换整个文档而不使用$-modifers,请求将被拒绝在没有检测`allow`函数情况下。
 
 {{/dtdd}}
 
 {{#dtdd "remove(userId, doc)"}}
 
-The user `userId` wants to remove `doc` from the database. Return
-`true` to permit this.
+用户`userId`想要从数据库中移除`doc`，返回`true`如果操作通过。
 
 {{/dtdd}}
 
 </dl>
 
-When calling `update` or `remove` Meteor will by default fetch the
-entire document `doc` from the database. If you have large documents
-you may wish to fetch only the fields that are actually used by your
-functions. Accomplish this by setting `fetch` to an array of field
-names to retrieve.
+当调用`update`或`remove` Meteor将默认从数据库获取整个`doc`文档。如果你有一个
+很大的文档, 你可能只想要获取指定的用在你函数上的字段. 通过设定`fetch`到一个字段
+名字的数组来检索可以达到这个目的。
 
 Example:
 
@@ -843,45 +811,37 @@ Example:
       fetch: ['locked'] // no need to fetch 'owner'
     });
 
-If you never set up any `allow` rules on a collection then all client
-writes to the collection will be denied, and it will only be possible to
-write to the collection from server-side code. In this case you will
-have to create a method for each possible write that clients are allowed
-to do. You'll then call these methods with `Meteor.call` rather than
-having the clients call `insert`, `update`, and `remove` directly on the
-collection.
+如果你从没设定任何的`allow`规则在你的集合中那么所有客户端的写入都将被拒绝，且它可能只能
+从服务端代码中写入。这种情况你将必须创建一个方法用来让客户端允许的写入成为可能。你将
+通过`Meteor.call`调用这些方法，而非通过客户端的`insert`, `update`, 和 `remove`
+直接操作集合.
 
-Meteor also has a special "insecure mode" for quickly prototyping new
-applications. In insecure mode, if you haven't set up any `allow` or `deny`
-rules on a collection, then all users have full write access to the
-collection. This is the only effect of insecure mode. If you call `allow` or
-`deny` at all on a collection, even `Posts.allow({})`, then access is checked
-just like normal on that collection. __New Meteor projects start in insecure
-mode by default.__ To turn it off just run `$ meteor remove insecure`.
+Meteor也有一个特别的"不安全模式"用来快速制作新应用程序原型。在不安全模式下，如果你
+没有设置任何的`allow`或`deny`规则在集合中，那么所有的用户都有完全的写入权限到你的集合。
+这个只有在不安全模式下生效。如果你调用`allow`或`deny`在所有集合，甚至
+`Posts.allow({})`, 那么访问会被正常检测。新Meteor项目默认开启不安全模式通。要关闭可以
+通过运行 `$ meteor remove insecure`.
 
 {{> api_box deny}}
 
-This works just like [`allow`](#allow), except it lets you
-make sure that certain writes are definitely denied, even if there is an
-`allow` rule that says that they should be permitted.
+类似于 [`allow`](#allow), 除了它是让你确定写入是否明确拒绝，即使`allow`规则允许
+也没用。
 
-When a client tries to write to a collection, the Meteor server first
-checks the collection's `deny` rules. If none of them return true then
-it checks the collection's `allow` rules. Meteor allows the write only
-if no `deny` rules return `true` and at least one `allow` rule returns
-`true`.
+当一个客户端试图写入到集合，Meteor服务先会检测集合的`deny`规则。如果没有一个返回真，
+那么它才检测集合的`allow`规则。Meteor允许写入只有在没有`deny`返回真且至少一个`allow`
+返回真。
 
-<h2 id="meteor_collection_cursor"><span>Cursors</span></h2>
+<h2 id="meteor_collection_cursor"><span>游标</span></h2>
 
-To create a cursor, use [`find`](#find).  To access the documents in a
-cursor, use [`forEach`](#foreach), [`map`](#map), or [`fetch`](#fetch).
+要创建一个游标，使用[`find`](#find)。想要访问集合通过游标，可使用
+[`forEach`](#foreach), [`map`](#map), 或 [`fetch`](#fetch).
 
 {{> api_box cursor_foreach}}
 
-This interface is compatible with [Array.forEach](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach).
+这个接口兼容于
+[Array.forEach](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach).
 
-When called from a reactive computation, `forEach` registers dependencies on
-the matching documents.
+当调用自一个响应式计算，`forEach`注册一个依赖到匹配的文档。
 
 Examples:
 
@@ -895,21 +855,19 @@ Examples:
 
 {{> api_box cursor_map}}
 
-This interface is compatible with [Array.map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map).
+这个接口兼容于
+[Array.map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map).
 
-When called from a reactive computation, `map` registers dependencies on
-the matching documents.
-
+当调用自一个响应式计算，`map`注册一个依赖到匹配的文档。
 <!-- The following is not yet implemented, but users shouldn't assume
      sequential execution anyway because that will break. -->
-On the server, if `callback` yields, other calls to `callback` may occur while
-the first call is waiting. If strict sequential execution is necessary, use
-`forEach` instead.
+
+在服务器端，其他回调可能发生在第一个回调以及功能开始，如果想要严格的按顺序执行，使用`forEach`
+替代。
 
 {{> api_box cursor_fetch}}
 
-When called from a reactive computation, `fetch` registers dependencies on
-the matching documents.
+当调用来自一个响应式计算，`fetch`注册一个依赖到匹配的文档.
 
 {{> api_box cursor_count}}
 
@@ -922,35 +880,29 @@ the matching documents.
     });
     document.body.appendChild(frag);
 
-Unlike the other functions, `count` registers a dependency only on the
-number of matching documents.  (Updates that just change or reorder the
-documents in the result set will not trigger a recomputation.)
+不像其他函数，`count`只有在匹配数目的文档注册一个依赖。(对改变或记录文档的更新不会触发
+重计算。)
 
 {{> api_box cursor_rewind}}
 
-The `forEach`, `map`, or `fetch` methods can only be called once on a
-cursor.  To access the data in a cursor more than once, use `rewind` to
-reset the cursor.
+`forEach`, `map`, 和 `fetch` 在一个游标中只能被调用一次。为了多次访问游标记录， 使用
+`rewind`可以重置游标。
 
 {{> api_box cursor_observe}}
 
-Establishes a *live query* that invokes callbacks when the result of
-the query changes. The callbacks receive the entire contents of the
-document that was affected, as well as its old contents, if
-applicable. If you only need to receive the fields that changed, see
+建立一个 *实时查询* 来调用回调当查询结果改变时候。回调接收整个受影响文档的内容，而且
+包括旧的内容。如果你只想要接收改变的字段，请参见
 [`observeChanges`](#observe_changes).
 
-`callbacks` may have the following functions as properties:
+`回调`可以含有一下属性：
 
 <dl class="callbacks">
 <dt><span class="name">added(document)</span> <span class="or">or</span></dt>
 <dt><span class="name">addedAt(document, atIndex, before)</span></dt>
 <dd>
 {{#better_markdown}}
-A new document `document` entered the result set. The new document
-appears at position `atIndex`. It is immediately before the document
-whose `_id` is `before`. `before` will be `null` if the new document
-is at the end of the results.
+一个包含结果集的新`文档`。这个文档出现在`atIndex`位置。它在`_id`为`before`文档的
+文档的前面。如果新文档在结果的末尾，`before`则为`null`。
 {{/better_markdown}}
 </dd>
 
@@ -959,8 +911,7 @@ is at the end of the results.
 <dt><span class="name">changedAt(newDocument, oldDocument, atIndex)</span></dt>
 <dd>
 {{#better_markdown}}
-The contents of a document were previously `oldDocument` and are now
-`newDocument`. The position of the changed document is `atIndex`.
+之前旧的文档内容变成现在新的内容。改变的文档的位置为`atIndex`。
 {{/better_markdown}}
 </dd>
 
@@ -969,42 +920,34 @@ The contents of a document were previously `oldDocument` and are now
 <dt><span class="name">removedAt(oldDocument, atIndex)</span></dt>
 <dd>
 {{#better_markdown}}
-The document `oldDocument` is no longer in the result set. It used to be at position `atIndex`.
+旧的文档不再出现在结果集中。它之前在`atInex`位置。
 {{/better_markdown}}
 </dd>
 
 {{#dtdd "movedTo(document, fromIndex, toIndex, before)"}}
-A document changed its position in the result set, from `fromIndex` to `toIndex`
-(which is before the document with id `before`). Its current contents is
-`document`.
+文档改变其在结果集中的位置，从`fromIndex`到`toIndex`（这是在id为`before`前的文档）。
+它当前的内容为`document`。
 {{/dtdd}}
 </dl>
 
-Use `added`, `changed`, and `removed` when you don't care about the
-order of the documents in the result set. They are more efficient than
-`addedAt`, `changedAt`, and `removedAt`.
+使用`added`,`changed`,和`removed`在你不关心文档在结果集中的顺序时。他们比
+`addedAt`, `changedAt`, 和 `removedAt`更有效果。
 
-Before `observe` returns, `added` (or `addedAt`) will be called zero
-or more times to deliver the initial results of the query.
+在`observe`返回前，`added`(或`addedAt`)将被调用0次或更多次来传递初始化结果查询。
 
-`observe` returns a live query handle, which is an object with a `stop` method.
-Call `stop` with no arguments to stop calling the callback functions and tear
-down the query. **The query will run forever until you call this.**  If
-`observe` is called from a `Deps.autorun` computation, it is automatically
-stopped when the computation is rerun or stopped.
-(If the cursor was created with the option `reactive` set to false, it will
-only deliver the initial results and will not call any further callbacks;
-it is not necessary to call `stop` on the handle.)
+`observe`返回一个实时查询句柄，句柄包含`stop`方法。不加参数调用`stop`可以停止调用回调并移除
+查询。**回调将永远执行直到你调用stop。**如果`obserce`通过一个`Deps.autorun`计算器
+调用，它则会自动停止当计算器重新运行或者停止。
+(如果游标被创建且`reactive`配置为false，那么它只会传递初始化结果且不会调用任何进一步的
+毁掉，也不需要再调用`stop`).
 
 
 {{> api_box cursor_observe_changes}}
 
-Establishes a *live query* that invokes callbacks when the result of
-the query changes. In contrast to [`observe`](#observe),
-`observeChanges` provides only the difference between the old and new
-result set, not the entire contents of the document that changed.
+建立一个`实时查询`，即在查询结果改变时候调用。相比 [`observe`](#observe),
+`observeChanges`只提供新和旧的结果集的不同数据，而不是整个被改变文档的内容。
 
-`callbacks` may have the following functions as properties:
+回掉可能含有一下函数属性：
 
 <dl class="callbacks">
 <dt><span class="name">added(id, fields)</span>
@@ -1020,15 +963,12 @@ specified. `fields` contains all fields of the document excluding the
 </dd>
 
 {{#dtdd "changed(id, fields)"}}
-The document identified by `id` has changed. `fields` contains the
-changed fields with their new values. If a field was removed from the
-document then it will be present in `fields` with a value of
-`undefined`.
+文档标识符`id`已经改变，`fields`包含新的值中改变的字段。如果一个字段从文档中移除，那么
+它在`fields`中被设定为`undefined`.
 {{/dtdd}}
 
 {{#dtdd "movedBefore(id, before)"}}
-The document identified by `id` changed its position in the ordered result set,
-and now appears before the document identified by `before`.
+文档的表示`id`改变它的位置，在按顺序的结果集中，且现在出现在文档标识符`before`的前面。
 {{/dtdd}}
 
 {{#dtdd "removed(id)"}}
@@ -1036,29 +976,25 @@ The document identified by `id` was removed from the result set.
 {{/dtdd}}
 </dl>
 
-`observeChanges` is significantly more efficient if you do not use
-`addedBefore` or `movedBefore`.
+`observeChanges` 更显著更有效，如果你不使用
+`addedBefore` 或 `movedBefore`.
 
-Before `observeChanges` returns, `added` (or `addedBefore`) will be called
-zero or more times to deliver the initial results of the query.
+在 `observeChanges` 返回前, `added` (或 `addedBefore`) 将被调用0次或更多次来
+传送查询的初始化结果。
 
-`observeChanges` returns a live query handle, which is an object with a `stop`
-method.  Call `stop` with no arguments to stop calling the callback functions
-and tear down the query. **The query will run forever until you call this.**
-If
-`observeChanges` is called from a `Deps.autorun` computation, it is automatically
-stopped when the computation is rerun or stopped.
-(If the cursor was created with the option `reactive` set to false, it will
-only deliver the initial results and will not call any further callbacks;
-it is not necessary to call `stop` on the handle.)
+`observeChanges`返回一个实时的查询句柄，句柄包含`stop`方法。不加参数调用`stop`可以停止回调
+并移除查询。**查询会一直运行知道调用这个`stop`.**
+
+`observeChange`被`Deps.autorun`计算器调用，当计算器重新运行或停止时它会自动停止。
+(如果游标被创建病配置`reactive`为false，它将只传递初始结果切不会调用更进一步的回调；
+它不需要调用`stop`句柄。)
 
 {{#note}}
-Unlike `observe`, `observeChanges` does not provide absolute position
-information (that is, `atIndex` positions rather than `before`
-positions.) This is for efficiency.
+不像`observe`，`obseveChanges`不提供绝对的地址信息（也就是，`atIndex`而非`before`位置，
+这是为了提高效率。
 {{/note}}
 
-Example:
+例如:
 
     // Keep track of how many administrators are online.
     var count = 0;
@@ -1079,22 +1015,20 @@ Example:
 
 {{> api_box collection_object_id}}
 
-`Meteor.Collection.ObjectID` follows the same API as the [Node MongoDB driver
+`Meteor.Collection.ObjectID`遵循相同的API作为 [Node MongoDB driver
 `ObjectID`](http://mongodb.github.com/node-mongodb-native/api-bson-generated/objectid.html)
-class. Note that you must use the `equals` method (or [`EJSON.equals`](#ejson_equals)) to
-compare them; the `===` operator will not work. If you are writing generic code
-that needs to deal with `_id` fields that may be either strings or `ObjectID`s, use
-[`EJSON.equals`](#ejson_equals) instead of `===` to compare them.
+. 注意你必须使用`euqals`方法 (或 [`EJSON.equals`](#ejson_equals)) 来比较他们；
+ `===` 操作将不起作用.如果你写的代码需要处理`_id`字段，该字段可能是字符串或者`ObjectID`, 请使用
+[`EJSON.equals`](#ejson_equals) 代替 `===` 来比较他们。
 
 {{#note}}
-  `ObjectID` values created by Meteor will not have meaningful answers to their `getTimestamp`
-  method, since Meteor currently constructs them fully randomly.
+  Meteor创建的`ObjectID`值不会对`getTimestamp`方法给出有意义的答案，因为Meteor当前
+  创建它们完全是通过随机的。
 {{/note}}
 
 {{#api_box_inline selectors}}
 
-In its simplest form, a selector is just a set of keys that must
-match in a document:
+在最简单的形式，一个选择器只是匹配一个文档的一组键值：
 
     // Matches all documents where deleted is false
     {deleted: false}
@@ -1105,7 +1039,7 @@ match in a document:
     // Matches every document
     {}
 
-But they can also contain more complicated tests:
+不过它可以包含更复杂的测试：
 
     // Matches documents where age is greater than 18
     {age: {$gt: 18}}
@@ -1116,15 +1050,13 @@ But they can also contain more complicated tests:
     // Matches documents where fruit is one of three possibilities
     {fruit: {$in: ["peach", "plum", "pear"]}}
 
-See the [complete
-documentation](http://www.mongodb.org/display/DOCS/Advanced+Queries).
+见 [完整的文档](http://www.mongodb.org/display/DOCS/Advanced+Queries).
 
 {{/api_box_inline}}
 
 {{#api_box_inline modifiers}}
 
-A modifier is an object that describes how to update a document in
-place by changing some of its fields. Some examples:
+修饰符是一个对象用来描述如何更新文档改变它的一些字段。例如：
 
     // Set the 'admin' property on the document to true
     {$set: {admin: true}}
@@ -1133,22 +1065,19 @@ place by changing some of its fields. Some examples:
     // to the end of the 'supporters' array
     {$inc: {votes: 2}, $push: {supporters: "Traz"}}
 
-But if a modifier doesn't contain any $-operators, then it is instead
-interpreted as a literal document, and completely replaces whatever was
-previously in the database. (Literal document modifiers are not currently
-supported by [validated updates](#allow).)
+但是如果修饰符不包含任何的$-操作符，那么它将被解释为一个文本文档，且完全替代为之前的数据库。
+(文本文档目前不被['allow'](#allow)支持.
 
     // Find the document with id "123", and completely replace it.
     Users.update({_id: "123"}, {name: "Alice", friends: ["Bob"]});
 
-See the [full list of
-modifiers](http://www.mongodb.org/display/DOCS/Updating#Updating-ModifierOperations).
+参见 [更详细的修饰符的解释](http://www.mongodb.org/display/DOCS/Updating#Updating-ModifierOperations).
 
 {{/api_box_inline}}
 
 {{#api_box_inline sortspecifiers}}
 
-Sorts may be specified using your choice of several syntaxes:
+排序可以指定几种不同的语法方法：
 
     // All of these do the same thing (sort in ascending order by
     // key "a", breaking ties in descending order of key "b")
@@ -1157,32 +1086,27 @@ Sorts may be specified using your choice of several syntaxes:
     ["a", ["b", "desc"]]
     {a: 1, b: -1}
 
-The last form will only work if your JavaScript implementation
-preserves the order of keys in objects. Most do, most of the time, but
-it's up to you to be sure.
+最后一种形式只有工作在你的javascript保存键值的顺序到你的对象中。要做更多，就得花更多
+时间，不过这由你来定。
 
 {{/api_box_inline}}
 
 {{#api_box_inline fieldspecifiers}}
 
-Queries can specify a particular set of fields to include or exclude from the
-result object.
+查询能指定一个特别的字段来从结果对象中包含或排除。
 
-To exclude certain fields from the result objects, the field specifier
-is a dictionary whose keys are field names and whose values are `0`.
+为了排除字段从结果集中，字段必须指定为一个字典，字典的键是字段的名字，值为`0`.
 
     // Users.find({}, {fields: {password: 0, hash: 0}})
 
-To return an object that only includes the specified field, use `1` as
-the value. The `_id` field is still included in the result.
+为了返回一个只包含特殊字段的独享，使用`1`来作为值。`_id`字段仍然会包含在结果中。
 
     // Users.find({}, {fields: {firstname: 1, lastname: 1}})
 
-It is not possible to mix inclusion and exclusion styles (except for the cases
-when `_id` is included by default or explicitly excluded). Field operators such
-as `$` and `$elemMatch` are not available on the client side yet.
+不可能混合包含和排除两种方式(除了`_id`是默认包含或者明切排除)。字段操作如`$`
+和`$elemMatch`在客户端上不可用。
 
-More advanced example:
+更进阶的例子:
 
     Users.insert({ alterEgos: [{ name: "Kira", alliance: "murderer" },
                                { name: "L", alliance: "police" }],
@@ -1197,20 +1121,19 @@ the MongoDB docs</a> for details of the nested field rules and array behavior.
 
 {{/api_box_inline}}
 
-<h2 id="session"><span>Session</span></h2>
+<h2 id="session"><span>会话</span></h2>
 
-`Session` provides a global object on the client that you can use to
-store an arbitrary set of key-value pairs. Use it to store things like
-the currently selected item in a list.
+`会话`提供一个全局的对象在客户端，你可以用来存储任意的键-值形式。使用它来存储东西就像
+当前在一个列表中选定选项。
 
-What's special about `Session` is that it's reactive. If
-you call [`Session.get`](#session_get)`("currentList")`
-from inside a template, the template will automatically be rerendered
-whenever [`Session.set`](#session_set)`("currentList", x)` is called.
+会话最特别的地方就是响应式。如果你从一个内置模板中调用
+[`Session.get`](#session_get)`("currentList")`,
+模板会自动重新渲染当
+[`Session.set`](#session_set)`("currentList", x)`被调用。
 
 {{> api_box set}}
 
-Example:
+例如:
 
     Deps.autorun(function () {
       Meteor.subscribe("chat-history", {room: Session.get("currentRoomId")});
@@ -1222,12 +1145,11 @@ Example:
 
 {{> api_box setDefault}}
 
-This is useful in initialization code, to avoid re-initializing a session
-variable every time a new version of your app is loaded.
+这在初始化代码时非常有用，这是为了避免每次都重新初始化会话.
 
 {{> api_box get}}
 
-Example:
+例如:
 
     Session.set("enemy", "Eastasia");
     var frag = Meteor.render(function () {
@@ -1243,15 +1165,14 @@ Example:
 
 {{> api_box equals}}
 
-If value is a scalar, then these two expressions do the same thing:
+如果值是一个标量，那么两个表达式做相同的事情：
 
     (1) Session.get("key") === value
     (2) Session.equals("key", value)
 
-... but the second one is always better. It triggers fewer invalidations
-(template redraws), making your program more efficient.
+... 但是第二个会更好。它触发较少的模板重绘，来提高你的应用程序性能。
 
-Example:
+例如:
 
     <template name="postsView">
     {{dstache}}! Show a dynamically updating list of items. Let the user click on an
@@ -1290,46 +1211,38 @@ Example:
     // If Session.get had been used instead of Session.equals, then
     // when the selection changed, all the items would be re-rendered.
 
-For object and array session values, you cannot use `Session.equals`; instead,
-you need to use the `underscore` package and write
-`_.isEqual(Session.get(key), value)`.
+如果会话值为对象或数组，你不能使用 `Session.equals`; 你可以使用 `underscore`
+包并写入 `_.isEqual(Session.get(key), value)` 来替代。
 
 
 
-<h2 id="accounts_api"><span>Accounts</span></h2>
+<h2 id="accounts_api"><span>账户</span></h2>
 
-The Meteor Accounts system builds on top of the `userId` support in
-[`publish`](#publish_userId) and [`methods`](#method_userId). The core
-packages add the concept of user documents stored in the database, and
-additional packages add [secure password
-authentication](#accounts_passwords), [integration with third party
-login services](#meteor_loginwithexternalservice), and a [pre-built user
+Meteor的账户系统建立在`userId`上，并提供
+[`publish`](#publish_userId)  [`methods`](#method_userId) 方法.
+核心包在数据库引入了用户文档存储的概念, 切扩展包添加了
+[安全密码验证](#accounts_passwords), [整合第三方登陆系统](#meteor_loginwithexternalservice), and a [pre-built user
 interface](#accountsui).
 
-The basic Accounts system is in the `accounts-base` package, but
-applications typically include this automatically by adding one of the
-login provider packages: `accounts-password`, `accounts-facebook`,
+基础的登陆系统是一个`accounts-base`包，但是应用程序通常需要包含自动包含一个登陆服务包:
+`accounts-password`, `accounts-facebook`,
 `accounts-github`, `accounts-google`, `accounts-meetup`,
-`accounts-twitter`, or `accounts-weibo`.
+`accounts-twitter`, 或 `accounts-weibo`.
 
 
 {{> api_box user}}
 
-Retrieves the user record for the current user from
-the [`Meteor.users`](#meteor_users) collection.
+检索当前用户的用户记录，通过 [`Meteor.users`](#meteor_users) 集合。
 
-On the client, this will be the subset of the fields in the document that
-are published from the server (other fields won't be available on the
-client). By default the server publishes `username`, `emails`, and
-`profile`. See [`Meteor.users`](#meteor_users) for more on
-the fields used in user documents.
+在客户端，这将是从服务器发布的文档（其他字段在客户端可能不能用）字段的子集.
+默认服务端发布 `username`, `emails`, 和
+`profile`. 见 [`Meteor.users`](#meteor_users) 如果想包含更多字段的话。
 
 {{> api_box userId}}
 
 {{> api_box users}}
 
-This collection contains one document per registered user. Here's an example
-user document:
+这个集合包含一个每个注册用户的一个文档。这是用户文档的例子：
 
     {
       _id: "bbca5d6a-2156-41c4-89da-0329e8c99a4f",  // Meteor.userId()
@@ -1358,8 +1271,7 @@ user document:
       }
     }
 
-A user document can contain any data you want to store about a user. Meteor
-treats the following fields specially:
+用户文档包含任何你想要存储关于用户的数据。Meteor特别提供一下字段：
 
 - `username`: a unique String identifying the user.
 - `emails`: an Array of Objects with keys `address` and `verified`;
@@ -1375,77 +1287,63 @@ treats the following fields specially:
   and its `resume` field contains tokens used to keep you
   logged in between sessions.
 
-Like all [Meteor.Collection](#collections)s, you can access all
-documents on the server, but only those specifically published by the server are
-available on the client.
+像所有的 [Meteor.Collection](#collections) 集合, 你能在服务端访问所有文档，
+但是只有指定的在服务端发布的才能在客户端可用。
 
-By default, the current user's `username`, `emails` and `profile` are
-published to the client. You can publish additional fields for the
-current user with:
+默认情况，当前用户的 `username`, `emails`, `profile` 会被发送的客户端。你可以发布
+更多扩展的字段在你的当前用户:
 
     Meteor.publish("userData", function () {
       return Meteor.users.find({_id: this.userId},
                                {fields: {'other': 1, 'things': 1}});
     });
 
-If the autopublish package is installed, information about all users
-on the system is published to all clients. This includes `username`,
-`profile`, and any fields in `services` that are meant to be public
-(eg `services.facebook.id`,
-`services.twitter.screenName`). Additionally, when using autopublish
-more information is published for the currently logged in user,
-including access tokens. This allows making API calls directly from
-the client for services that allow this.
+如果自动发布包被安装，系统中关于所有用户的信息将被发布到所有客户端。它包含
+`username`, `profile`, 和任何公用的 `服务` (例如 `services.facebook.id`,
+`services.twitter.screenName`). 此外，当使用自动发布更多信息将以当前登陆的
+用户发布，包含它的访问tokens。这允许从客户端直接调用API，只要服务器允许这样做。
 
-Users are by default allowed to specify their own `profile` field with
-[`Accounts.createUser`](#accounts_createuser) and modify it with
-`Meteor.users.update`. To allow users to edit additional fields, use
-[`Meteor.users.allow`](#allow). To forbid users from making any modifications to
-their user document:
+用户默认允许配置它的`profile`字段，只要通过
+[`Accounts.createUser`](#accounts_createuser) 和
+`Meteor.users.update` 修改. 如果要允许用户编辑扩展字段，使用
+[`Meteor.users.allow`](#allow)可禁止用户使用任何的修改到用户文档：
 
     Meteor.users.deny({update: function () { return true; }});
 
 
 {{> api_box loggingIn}}
 
-For example, [the `accounts-ui` package](#accountsui) uses this to display an
-animation while the login request is being processed.
+例如, [`accounts-ui` 包](#accountsui)
+使用它来显示一个动画在用户请求被处理的时候。
 
 {{> api_box logout}}
 
 {{> api_box logoutOtherClients}}
 
-For example, when called in a user's browser, connections in that browser
-remain logged in, but any other browsers or DDP clients logged in as that user
-will be logged out.
+例如，当在用户的浏览器中调用时，浏览器会保持连接状态，但是任何其他的浏览器或者DDP客户端
+登陆该用户都会被登出。
 
 {{> api_box loginWithPassword}}
 
-This function is provided by the `accounts-password` package. See the
-[Passwords](#accounts_passwords) section below.
+这个函数由 `accounts-password` 包提供。见
+[Passwords](#accounts_passwords) 会话.
 
 
 {{> api_box loginWithExternalService}}
 
-These functions initiate the login process with an external
-service (eg: Facebook, Google, etc), using OAuth. When called they open a new pop-up
-window that loads the provider's login page. Once the user has logged in
-with the provider, the pop-up window is closed and the Meteor client
-logs in to the Meteor server with the information provided by the external
-service.
+这个函数可用于启动一个扩展服务的登陆进程
+(例如: Facebook, Google, 等等),
+使用了 OAuth.
+当他们调用时, 他们打开一个下拉窗来加载提供者的登陆页面.一旦用户被登陆，下拉窗就关闭然后
+Meteor客户端登陆Meteor服务器并或者这些扩展服务提供的信息。
 
 <a id="requestpermissions" name="requestpermissions" />
 
-In addition to identifying the user to your application, some services
-have APIs that allow you to take action on behalf of the user. To
-request specific permissions from the user, pass the
-`requestPermissions` option the login function. This will cause the user
-to be presented with an additional page in the pop-up dialog to permit
-access to their data. The user's `accessToken` &mdash; with permissions
-to access the service's API &mdash; is stored in the `services` field of
-the user document. The supported values for `requestPermissions` differ
-for each login service and are documented on their respective developer
-sites:
+除了识别用户到你的应用程序，一些服务还提供API来允许你代表用户来执行行为。为了请求用户的
+特定权限，传递 `requestPermissions` 选项来登陆函数。这会导致用户在弹出的对话框
+出现一个额外的页面来访问他们的数据。用户的
+ `accessToken` -- 以权限访问服务器的API，会存储在服务端的用户文档的字段中。
+ 对于 `requestPermissions` 支持的值不同于每个登陆服务，它会记录在各自的网站:
 
 - Facebook: <http://developers.facebook.com/docs/authentication/permissions/>
 - GitHub: <http://developer.github.com/v3/oauth/#scopes>
@@ -1453,12 +1351,9 @@ sites:
 - Meetup: <http://www.meetup.com/meetup_api/auth/#oauth2-scopes>
 - Twitter, Weibo: `requestPermissions` currently not supported
 
-External login services typically require registering and configuring
-your application before use. The easiest way to do this is with the
-[`accounts-ui` package](#accountsui) which presents a step-by-step guide
-to configuring each service. However, the data can be also be entered
-manually in the `Accounts.loginServiceConfiguration` collection. For
-example:
+扩展的登陆服务通常在使用前需要注册和配置你的应用程序。最简单的方式是使用
+[`accounts-ui` 包](#accountsui), 该包可以一步一步指导你配置每个服务。然而，
+数据也可以被手动的通过 `Accounts.loginServiceConfiguration` 集合进入。例如；
 
     // first, remove configuration entry in case service is already configured
     Accounts.loginServiceConfiguration.remove({
@@ -1471,9 +1366,8 @@ example:
     });
 
 
-Each external service has its own login provider package and login function. For
-example, to support GitHub login, run `$ meteor add accounts-github` and use the
-`Meteor.loginWithGithub` function:
+每个扩展的服务拥有它自己的登陆提供包和登陆函数。例如为了支持GitHub登陆，运行
+`$ meteor add accounts-github` 并使用 `Meteor.loginWithGithub` 函数:
 
     Meteor.loginWithGithub({
       requestPermissions: ['user', 'public_repo']
@@ -1489,7 +1383,7 @@ example, to support GitHub login, run `$ meteor add accounts-github` and use the
 {{> api_box accounts_config}}
 {{> api_box accounts_ui_config}}
 
-Example:
+例如:
 
     Accounts.ui.config({
       requestPermissions: {
@@ -1504,12 +1398,12 @@ Example:
 
 {{> api_box accounts_validateNewUser}}
 
-This can be called multiple times. If any of the functions return `false` or
-throw an error, the new user creation is aborted. To set a specific error
-message (which will be displayed by [`accounts-ui`](#accountsui)), throw a new
-[`Meteor.Error`](#meteor_error).
+这个可以被多次调用。如果任何的函数返回`false`或抛出异常，新的用户创建将被终止。如果要设定
+一个特定的错误信息（会被显示到
+be displayed by [`accounts-ui`](#accountsui)),
+抛出一个 [`Meteor.Error`](#meteor_error)异常.
 
-Example:
+例如:
 
     // Validate username, sending a specific error message on failure.
     Accounts.validateNewUser(function (user) {
@@ -1524,28 +1418,22 @@ Example:
 
 {{> api_box accounts_onCreateUser}}
 
-Use this when you need to do more than simply accept or reject new user
-creation. With this function you can programatically control the
-contents of new user documents.
+使用这个当你需要做更多事情而不是简单的接收或者拒绝新的用户创建。通过这个函数你可以通过编程
+控制新的用户文档的内容。
 
-The function you pass will be called with two arguments: `options` and
-`user`. The `options` argument comes
-from [`Accounts.createUser`](#accounts_createuser) for
-password-based users or from an external service login flow. `options` may come
-from an untrusted client so make sure to validate any values you read from
-it. The `user` argument is created on the server and contains a
-proposed user object with all the automatically generated fields
-required for the user to log in.
+这个你传递的函数将以两个参数被调用: `options` 和 `user`.
+`options`参数来自 [`Accounts.createUser`](#accounts_createuser) 一种基于密码的
+用户，或者来自一个扩展的服务登陆流程。`options`可能会来自一个不被信任的客户端所以一定要验证
+任何的值你从它获取到的。`user`参数被创建在服务端，它包含一个推荐的用户对象，对象包含所有自动
+生成的字段，在用户要求登陆时。
 
-The function should return the user document (either the one passed in or a
-newly-created object) with whatever modifications are desired. The returned
-document is inserted directly into the [`Meteor.users`](#meteor_users) collection.
+函数应该返回一个用户文档(不管是一次传入或者新创建的对象)，任何修改都需要这个文档。返回的文档
+直接插入到 [`Meteor.users`](#meteor_users) 集合中.
 
-The default create user function simply copies `options.profile` into
-the new user document. Calling `onCreateUser` overrides the default
-hook. This can only be called once.
+默认创建的用户对象只是简单的服务 `options.profile` 到新的用户文档中。调用
+`onCreateUser` 可覆盖默认的钩子。这个只能被调用一次。
 
-Example:
+例如:
 
 <!-- XXX replace d6 with _.random once we have underscore 1.4.2 -->
 
@@ -1560,94 +1448,84 @@ Example:
     });
 
 
-<h2 id="accounts_passwords"><span>Passwords</span></h2>
+<h2 id="accounts_passwords"><span>密码</span></h2>
 
-The `accounts-password` package contains a full system for password-based
-authentication. In addition to the basic username and password-based
-sign-in process, it also supports email-based sign-in including
-address verification and password recovery emails.
+`accounts-password` 包含一个完整的系统用来使用基于密码的验证。除了基础的用户名和
+密码登陆程序，它还提供email登陆，包括地址验证和emails密码恢复。
 
-Unlike most web applications, the Meteor client does not send the user's
-password directly to the server. It uses the [Secure Remote Password
-protocol](http://en.wikipedia.org/wiki/Secure_Remote_Password_protocol)
-to ensure the server never sees the user's plain-text password. This
-helps protect against embarrassing password leaks if the server's
-database is compromised.
+不像大部分的web应用，Meteor客户端不直接发送用户的密码到客户但。它使用
+[安全远程密码协议](http://en.wikipedia.org/wiki/Secure_Remote_Password_protocol)
+来确保服务端无法看到用户的文本密码。这样能防止密码被泄漏如果服务端的数据库被攻破。
 
-To add password support to your application, run `$ meteor add
-accounts-password`. You can construct your own user interface using the
-functions below, or use the [`accounts-ui` package](#accountsui) to
-include a turn-key user interface for password-based sign-in.
+为了给你的应用程序添加密码支持，运行 `$ meteor add accounts-password`.
+你可以通过以下函数创建你自己的用户接口,或者使用 [`accounts-ui` 包](#accountsui)
+来包含一个turn-key用户接口实现这种密码式登陆。
 
 
 {{> api_box accounts_createUser}}
 
-On the client, this function logs in as the newly created user on
-successful completion. On the server, it returns the newly created user
-id.
+在客户端，这个函数被用来记录一个新的用户创建的成功完成。在服务端，它返回新创建的用户的id。
 
-On the client, you must pass `password` and one of `username` or `email`
-&mdash; enough information for the user to be able to log in again
-later. On the server, you can pass any subset of these options, but the
-user will not be able to log in until it has an identifier and a
-password.
+在客户端，你必须发送`password`或者`username`或`email`其中的一个，这样就有足够的信息来
+保证用户再次登陆。在服务端，你可以发送这些选项的子集，但是用户不能登陆除非它拥有标识和一个
+密码。
 
-To create an account without a password on the server and still let the
-user pick their own password, call `createUser` with the `email` option
-and then
-call [`Accounts.sendEnrollmentEmail`](#accounts_sendenrollmentemail). This
-will send the user an email with a link to set their initial password.
+为了创建一个账户而不使用密码在服务端且仍然让用户选择自己的密码，调用`createUser`包含
+一个`email`选项，然后调用
+[`Accounts.sendEnrollmentEmail`](#accounts_sendenrollmentemail).
+这会发送给用户邮箱一个连接来设定他们初始化的密码。
 
-By default the `profile` option is added directly to the new user document. To
-override this behavior, use [`Accounts.onCreateUser`](#accounts_oncreateuser).
+默认`profile`选项被直接添加一个新的用户文档。为了覆盖这些行为，可使用
+[`Accounts.onCreateUser`](#accounts_oncreateuser).
 
-This function is only used for creating users with passwords. The external
-service login flows do not use this function.
+这个函数只是用来使用密码创建用户。外部的服务登陆流程不能使用这个函数。
 
 
 {{> api_box accounts_changePassword}}
 
 {{> api_box accounts_forgotPassword}}
 
-This triggers a call
-to [`Accounts.sendResetPasswordEmail`](#accounts_sendresetpasswordemail)
-on the server. Pass the token the user receives in this email
-to [`Accounts.resetPassword`](#accounts_resetpassword) to
-complete the password reset process.
+这会出发一个调用到服务器的
+ [`Accounts.sendResetPasswordEmail`](#accounts_sendresetpasswordemail)
+. 传递用户在邮箱中接受到的token到
+[`Accounts.resetPassword`](#accounts_resetpassword)
+可以完成密码重设程序。
 
-If you are using the [`accounts-ui` package](#accountsui), this is handled
-automatically. Otherwise, it is your responsiblity to prompt the user for the
-new password and call `resetPassword`.
+如果你使用
+[`accounts-ui` 包](#accountsui),
+它会自动处理。否则，你必须要自己去提示用户输入新密码并调用 `resetPassword`。
 
 {{> api_box accounts_resetPassword}}
 
-This function accepts tokens generated
-by [`Accounts.sendResetPasswordEmail`](#accounts_sendresetpasswordemail)
-and
-[`Accounts.sendEnrollmentEmail`](#accounts_sendenrollmentemail).
+这个函数接收由
+[`Accounts.sendResetPasswordEmail`](#accounts_sendresetpasswordemail)
+和
+[`Accounts.sendEnrollmentEmail`](#accounts_sendenrollmentemail)
+生成的token。
 
 {{> api_box accounts_setPassword}}
 
 {{> api_box accounts_verifyEmail}}
 
-This function accepts tokens generated
-by [`Accounts.sendVerificationEmail`](#accounts_sendverificationemail). It
-sets the `emails.verified` field in the user record.
+这个函数接受由
+[`Accounts.sendVerificationEmail`](#accounts_sendverificationemail)
+生成的token。它设定了
+`emails.verified` 字段在用户的记录中。
 
 {{> api_box accounts_sendResetPasswordEmail}}
 
-The token in this email should be passed
-to [`Accounts.resetPassword`](#accounts_resetpassword).
+该邮箱的token必须发送到
+[`Accounts.resetPassword`](#accounts_resetpassword).
 
-To customize the contents of the email, see
+要自定义发送到邮箱的内容，见
 [`Accounts.emailTemplates`](#accounts_emailtemplates).
 
 {{> api_box accounts_sendEnrollmentEmail}}
 
-The token in this email should be passed
-to [`Accounts.resetPassword`](#accounts_resetpassword).
+该邮箱的token必须发送到
+[`Accounts.resetPassword`](#accounts_resetpassword).
 
-To customize the contents of the email, see
+要自定义发送到邮箱的内容，见
 [`Accounts.emailTemplates`](#accounts_emailtemplates).
 
 {{> api_box accounts_sendVerificationEmail}}
@@ -1655,16 +1533,16 @@ To customize the contents of the email, see
 The token in this email should be passed
 to [`Accounts.verifyEmail`](#accounts_verifyemail).
 
-To customize the contents of the email, see
+该邮箱的token必须发送到
 [`Accounts.emailTemplates`](#accounts_emailtemplates).
 
 {{> api_box accounts_emailTemplates}}
 
-This is an `Object` with several fields that are used to generate text
-for the emails sent by `sendResetPasswordEmail`, `sendEnrollmentEmail`,
-and `sendVerificationEmail`.
+这是一个对象包含一些字段用来生成由
+`sendResetPasswordEmail`, `sendEnrollmentEmail`,
+和 `sendVerificationEmail`发送的邮箱文本。
 
-Override fields of the object by assigning to them:
+通过指定以下选项来覆盖对象的字段：
 
 - `from`: A `String` with an [RFC5322](http://tools.ietf.org/html/rfc5322) From
    address. By default, the email is sent from `no-reply@meteor.com`. If you
@@ -1683,7 +1561,7 @@ Override fields of the object by assigning to them:
    address.
 
 
-Example:
+例如:
 
     Accounts.emailTemplates.siteName = "AwesomeSite";
     Accounts.emailTemplates.from = "AwesomeSite Admin <accounts@example.com>";
@@ -1697,31 +1575,22 @@ Example:
     };
 
 
-<h2 id="templates_api"><span>Templates</span></h2>
+<h2 id="templates_api"><span>模板</span></h2>
 
-A template that you declare as `<{{! }}template name="foo"> ... </{{!
-}}template>` can be accessed as the function `Template.foo`, which
-returns a string of HTML when called.
+一个模板通过声明类似
+`<{{! }}template name="foo"> ... </{{!
+}}template>` 可以被`Template.foo`访问，并返回一个HTML字符串在被调用的时候。
 
-The same template may occur many times on the page, and these
-occurrences are called template instances.  Template instances have a
-life cycle of being created, put into the document, and later taken
-out of the document and destroyed.  Meteor manages these stages for
-you, including determining when a template instance has been removed
-or replaced and should be cleaned up.  You can associate data with a
-template instance, and you can access its DOM nodes when it is in the
-document.
+一个相同的模板可能在页面中出现很多次，这些出现都被称作模板实例。模板实例
+拥有一个生命周期：被创建，添加入文档，然后从文档中拿出，最后销毁。Meteor
+为你管理这些阶段，包括决定什么时候模板实例被移除,替换, 清理掉。你可以关联数据到一个模板
+实例，当它在文档中时候你可以访问它的DOM节点。
 
-Additionally, Meteor will maintain a template instance and its state
-even if its surrounding HTML is re-rendered into new DOM nodes.  As
-long as the structure of template invocations is the same, Meteor will
-not consider any instances to have been created or destroyed.  You can
-request that the same DOM nodes be retained as well using `preserve`
-and `constant`.
+此外, Meteor会维持一个模板实例和它的状态，甚至它被包装成HTML并重新渲染到新的DOM借点。
+只要模板的调用的结构是相同的，Meteor将不考虑已经创建或销毁的任何实例。你可以请求同一
+个被保留的DOM节点，以及使用 `preserve` 和 `constant`.
 
-There are a number of callbacks and directives that you can specify on
-a named template and that apply to all instances of the template.
-They are described below.
+有很多回调和指令可以指定在已命名的模板中，同样可以使用于所有模板的实例。它们会在下面描述。
 
 {{> api_box template_call}}
 
